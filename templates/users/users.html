@@ -1,0 +1,571 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="grid grid-cols-4 gap-4 mb-6">
+
+    {% set stat_cards = [
+        ('Total Accounts', stats.total,    '#22d3ee'),
+        ('Active',         stats.active,   '#22d3ee'),
+        ('Inactive',       stats.inactive, '#22d3ee'),
+        ('Managers',       stats.managers, '#22d3ee'),
+    ] %}
+
+    {% for label, value, color in stat_cards %}
+    <div class="bg-[#1A2236]  shadow-[0_22px_50px_rgba(6,15,32,0.30)] rounded-2xl p-5 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-[#41C2EF] flex items-center justify-center flex-shrink-0 shadow-[0_4px_12px_rgba(60,143,245,0.15)]">
+            <svg class="w-5 h-5 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z" />
+            </svg>
+        </div>
+        <div class="min-w-0 border-l border-[#122a44] pl-4">
+            <p class="text-[#94b1d2] text-xs font-semibold uppercase tracking-wider mb-0.5">{{ label }}</p>
+            <p class="text-white text-2xl font-bold tracking-tight">{{ value }}</p>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+
+<div class="flex items-center justify-between mb-6 gap-4">
+    <div class="relative flex-1 max-w-xs">
+        <span class="absolute left-4 top-1/2 -translate-y-1/2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+        </span>
+        <input type="text" id="search-input" name="q" value="{{ search }}"
+               placeholder="{{ 'Search roles...' if tab == 'roles' else 'Search users...' }}"
+               class="w-full bg-[#1A2236] rounded-2xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]
+                      pl-12 pr-4 py-3 text-sm text-gray-100 placeholder-[#527195]
+                      focus:outline-none focus:border-[#2b5fad] transition-colors">
+    </div>
+
+    <div class="flex items-center gap-3">
+        {% if tab == 'users' %}
+        <button onclick="openModal('add-user-modal')"
+                class="flex items-center gap-2 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900
+                       font-semibold px-5 py-3 rounded-2xl text-sm transition-colors shadow-[0_4px_12px_rgba(60,143,245,0.1)]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add User
+        </button>
+        {% else %}
+        <button onclick="openModal('add-role-modal')"
+                class="flex items-center gap-2 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900
+                       font-semibold px-5 py-3 rounded-2xl text-sm transition-colors shadow-[0_4px_12px_rgba(60,143,245,0.1)]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add New Role
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="flex gap-2 mb-6">
+    <a href="/users/?tab=users"
+       class="px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all border
+              {% if tab == 'users' %}bg-[#41c2ef] border-[#2b5fad] text-gray-900 {% else %}bg-[#1A2236] border-[#1c3152] text-[#94b1d2] hover:text-white hover:bg-[#11213c]{% endif %}">
+        Users
+    </a>
+    <a href="/users/?tab=roles"
+       class="px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all border
+              {% if tab == 'roles' %}bg-[#41c2ef] border-[#2b5fad] text-gray-900 {% else %}bg-[#1A2236] border-[#1c3152] text-[#94b1d2] hover:text-white hover:bg-[#11213c]{% endif %}">
+        Roles
+    </a>
+</div>
+
+
+{% if tab == 'users' %}
+<div class="bg-[#1A2236]  rounded-2xl overflow-hidden shadow-[0_22px_50px_rgba(6,15,32,0.30)]">
+    <div class="px-6 py-5 border-b border-[#122645] bg-[#1A2236]">
+        <h2 class="text-white text-lg font-bold tracking-tight">Users</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full border-separate border-spacing-0">
+            <thead>
+                <tr class="ms-10 bg-[#0b182d] rounded-2xl">
+                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-[#122645]">Name</th>
+                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-[#122645]">Role</th>
+                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-[#122645]">Last Login</th>
+                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-[#122645]">Status</th>
+                    <th class="text-right text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-[#122645]">Action</th>
+                </tr>
+            </thead>
+            <tbody id="users-table-body" class="divide-y divide-[#122645] bg-[#1A2236]">
+                {% include "users/partials/_user_rows.html" %}
+            </tbody>
+        </table>
+
+        {% if not all_users %}
+        <div class="text-center py-16 text-[#94b1d2]">
+            <svg class="w-12 h-12 mx-auto mb-3 opacity-30 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <p class="text-sm font-medium">No users found</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+
+{% if tab == 'roles' %}
+<div id="roles-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    {% for role in roles %}
+    <div class="bg-[#1A2236]  rounded-2xl p-6 flex flex-col gap-5 shadow-[0_22px_50px_rgba(6,15,32,0.30)]">
+        <h3 class="text-white font-bold text-lg capitalize tracking-tight">{{ role.name }}</h3>
+
+        <div class="rounded-2xl p-4">
+            <p class="text-[#94b1d2] text-xs font-bold uppercase tracking-wider mb-4">Privileges</p>
+            <div class="space-y-3">
+                {% for module, actions in role.permissions.items() %}
+                <div class="flex items-center justify-between gap-4 text-sm">
+                    <div class="flex items-center gap-2 text-white font-medium">
+                        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#41c2ef] text-white flex-shrink-0">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12l4 4 8-8" />
+                            </svg>
+                        </span>
+                        <span class="capitalize">{{ module }}</span>
+                    </div>
+                    <span class="text-[#94b1d2] text-xs font-medium capitalize">{{ actions | join(', ') }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-[#122645] mt-auto">
+            <button onclick="openEditRole('{{ role.id }}', '{{ role.name }}', '{{ role.description }}', '{{ role.permission_ids | join(',') }}')"
+                    class="flex-1 flex items-center justify-center gap-2 border border-[#2b5fad] hover:bg-[#41C2EF]/90 py-3 rounded-2xl text-sm font-semibold transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Edit
+            </button>
+            <form method="POST" action="/users/roles/delete/{{ role.id }}"
+                  onsubmit="return confirm('Delete role {{ role.name }}? This cannot be undone.')" class="flex-shrink-0">
+                <button type="submit"
+                        class="flex h-11 w-full items-center justify-center rounded-2xl border border-red-500/20 bg-[#1A2236]
+                               text-red-400 hover:bg-red-500/10 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if not roles %}
+    <div class="col-span-3 text-center py-16 text-[#94b1d2]">
+        <p class="text-sm font-medium">No roles found. Create one using "Add New Role".</p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+
+<dialog id="add-user-modal" class="bg-[#1A2236]  rounded-2xl p-8 w-full max-w-2xl shadow-[0_32px_80px_rgba(1,10,26,0.40)] backdrop:bg-black/70">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-white text-xl font-bold tracking-tight">Add User</h2>
+        <button onclick="closeModal('add-user-modal')" class="text-[#94b1d2] hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    <form method="POST" action="/users/create" enctype="multipart/form-data">
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Full Name <span class="text-[#ff7d7d]">*</span></label>
+                <input type="text" name="name" required placeholder="Enter full name"
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                              text-gray-100 placeholder-[#527195] text-sm
+                              focus:outline-none focus:border-[#2b5fad] transition-all">
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Email Address <span class="text-[#ff7d7d]">*</span></label>
+                <input type="email" name="email" required placeholder="Enter email"
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                              text-gray-100 placeholder-[#527195] text-sm
+                              focus:outline-none focus:border-[#2b5fad] transition-all">
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Phone Number <span class="text-[#ff7d7d]">*</span></label>
+                <input type="text" name="phone" placeholder="Enter phone number"
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                              text-gray-100 placeholder-[#527195] text-sm
+                              focus:outline-none focus:border-[#2b5fad] transition-all">
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">CNIC <span class="text-[#ff7d7d]">*</span></label>
+                <input type="text" name="cnic" placeholder="12345-1234567-1"
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                              text-gray-100 placeholder-[#527195] text-sm
+                              focus:outline-none focus:border-[#2b5fad] transition-all">
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Role <span class="text-[#ff7d7d]">*</span></label>
+                <select name="role_id" required
+                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                               text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                    <option value="" disabled selected>Select role</option>
+                    {% for role in roles %}
+                    <option value="{{ role.id }}">{{ role.name | capitalize }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Address</label>
+                <input type="text" name="address" placeholder="Enter address"
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                              text-gray-100 placeholder-[#527195] text-sm
+                              focus:outline-none focus:border-[#2b5fad] transition-all">
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Profile Picture</label>
+                <input type="file" name="profile_pic" accept="image/*"
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-2 text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+            </div>
+        </div>
+
+        <p class="text-[#94b1d2] text-xs font-medium mb-6">
+            💡 Initial password for new users will be <strong>123</strong>. The user can change it via Forgot Password.
+        </p>
+
+        <div class="flex justify-end gap-3">
+            <button type="button" onclick="closeModal('add-user-modal')"
+                    class="px-6 py-2.5 border border-[#1c3152] hover:border-[#2b5fad]
+                           text-[#94b1d2] rounded-xl text-sm font-medium transition-all">
+                Cancel
+            </button>
+            <button type="submit"
+                    class="px-6 py-2.5 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900 rounded-xl text-sm font-semibold transition-all shadow-[0_4px_12px_rgba(60,143,245,0.1)]">
+                Add User
+            </button>
+        </div>
+    </form>
+</dialog>
+
+
+<dialog id="edit-user-modal" class="bg-[#1A2236]  rounded-2xl p-8 w-full max-w-2xl shadow-[0_32px_80px_rgba(1,10,26,0.40)] backdrop:bg-black/70">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-white text-xl font-bold tracking-tight">Edit User</h2>
+        <button onclick="closeModal('edit-user-modal')" class="text-[#94b1d2] hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    <form method="POST" id="edit-user-form" action="" enctype="multipart/form-data">
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Full Name</label>
+                <input type="text" name="name" id="edit-name" required
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                              text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Email Address</label>
+                <input type="email" name="email" id="edit-email" required
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                              text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Phone Number</label>
+                <input type="text" name="phone" id="edit-phone"
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                              text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">CNIC</label>
+                <input type="text" name="cnic" id="edit-cnic"
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                              text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Role</label>
+                <select name="role_id" id="edit-role"
+                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                               text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                    {% for role in roles %}
+                    <option value="{{ role.id }}">{{ role.name | capitalize }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Status</label>
+                <select name="is_active" id="edit-status"
+                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                               text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[#94b1d2] text-sm font-medium mb-2">Profile Picture</label>
+                <input type="file" name="profile_pic" accept="image/*"
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-2 text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <button type="button" onclick="closeModal('edit-user-modal')"
+                    class="px-6 py-2.5 border border-[#1c3152] hover:border-[#2b5fad]
+                           text-[#94b1d2] rounded-xl text-sm font-medium transition-all">
+                Cancel
+            </button>
+            <button type="submit"
+                    class="px-6 py-2.5 bg-[#41c2ef]  hover:bg-[#41C2EF]/90
+                           rounded-xl text-sm font-semibold transition-all shadow-[0_4px_12px_rgba(60,143,245,0.1)]">
+                Save Changes
+            </button>
+        </div>
+    </form>
+</dialog>
+
+
+<dialog id="add-role-modal" class="bg-[#1A2236]  rounded-2xl p-8 w-full max-w-2xl shadow-[0_32px_80px_rgba(1,10,26,0.40)] backdrop:bg-black/70">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-white text-xl font-bold tracking-tight">Add New Role</h2>
+        <button onclick="closeModal('add-role-modal')" class="text-[#94b1d2] hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    <form method="POST" action="/users/roles/create">
+        <div class="mb-5">
+            <label class="block text-[#94b1d2] text-sm font-medium mb-2">Role Name <span class="text-[#ff7d7d]">*</span></label>
+            <input type="text" name="name" required placeholder="e.g. Trainer, Manager"
+                   class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                          text-gray-100 placeholder-[#527195] text-sm
+                          focus:outline-none focus:border-[#2b5fad] transition-all">
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-[#94b1d2] text-sm font-medium mb-3">
+                Access Permissions <span class="text-[#ff7d7d]">*</span>
+            </label>
+            <div class="border border-[#1c3152] rounded-xl overflow-hidden bg-[#0b182d]">
+                <div class="grid grid-cols-4 bg-[#0f2542] px-4 py-3 border-b border-[#1c3152]">
+                    <span class="col-span-2 text-xs text-[#94b1d2] font-bold uppercase tracking-wider">Module</span>
+                    <span class="text-xs text-[#94b1d2] font-bold uppercase tracking-wider text-center">Edit</span>
+                    <span class="text-xs text-[#94b1d2] font-bold uppercase tracking-wider text-center">Delete</span>
+                </div>
+                {% for module, perms in modules.items() %}
+                <div class="grid grid-cols-4 px-4 py-3.5 border-b border-[#122645] last:border-0 hover:bg-[#11213c]">
+                    <div class="col-span-2 flex items-center gap-2">
+                        <input type="checkbox" id="module-{{ module }}"
+                               data-module="{{ module }}"
+                               onchange="toggleModulePerms('{{ module }}')"
+                               class="role-checkbox focus:ring-[#2b5fad]">
+                        <label for="module-{{ module }}" class="text-white text-sm font-medium capitalize cursor-pointer">
+                            {{ module }}
+                        </label>
+                        {% set view_perm = perms | selectattr('action', 'equalto', 'view') | first %}
+                        {% if view_perm %}
+                        <input type="checkbox" name="permission_ids" value="{{ view_perm.id }}"
+                               id="perm-{{ module }}-view"
+                               data-module="{{ module }}"
+                               class="perm-{{ module }}"
+                               style="display:none;">
+                        {% endif %}
+                    </div>
+                    {% for action in ['edit', 'delete'] %}
+                    {% set perm = perms | selectattr('action', 'equalto', action) | first %}
+                    <div class="flex items-center justify-center">
+                        {% if perm %}
+                        <input type="checkbox" name="permission_ids" value="{{ perm.id }}"
+                               id="perm-{{ module }}-{{ action }}"
+                               data-module="{{ module }}"
+                               class="role-checkbox perm-{{ module }} focus:ring-[#2b5fad]">
+                        {% else %}
+                        <span class="text-[#527195] text-xs">—</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <button type="button" onclick="closeModal('add-role-modal')"
+                    class="px-6 py-2.5 border border-[#1c3152] hover:border-[#2b5fad]
+                           text-[#94b1d2] rounded-xl text-sm font-medium transition-all">
+                Cancel
+            </button>
+            <button type="submit"
+                    class="px-6 py-2.5 bg-[#41c2ef]  hover:bg-[#41C2EF]/90
+                           rounded-xl text-sm font-semibold transition-all shadow-[0_4px_12px_rgba(60,143,245,0.1)]">
+                Add Role
+            </button>
+        </div>
+    </form>
+</dialog>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Modal helpers ────────────────────────────────────────────────────────────
+function openModal(id, reset = true) {
+    const dialog = document.getElementById(id);
+    // reset add-role-modal to default create state only when requested
+    if (id === 'add-role-modal' && reset) {
+        const form = dialog.querySelector('form');
+        if (form) {
+            form.action = '/users/roles/create';
+            const title = dialog.querySelector('h2');
+            if (title) title.textContent = 'Add New Role';
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.textContent = 'Add Role';
+            // clear inputs
+            const nameInput = form.querySelector('input[name="name"]'); if (nameInput) nameInput.value = '';
+            const descInput = form.querySelector('textarea[name="description"]'); if (descInput) descInput.value = '';
+            form.querySelectorAll('input[name="permission_ids"]').forEach(cb => cb.checked = false);
+            initModulePermToggles();
+        }
+    }
+    dialog.showModal();
+}
+function closeModal(id) {
+    document.getElementById(id).close();
+}
+
+// Close dialog when clicking backdrop
+document.querySelectorAll('dialog').forEach(dialog => {
+    dialog.addEventListener('click', e => {
+        const rect = dialog.getBoundingClientRect();
+        const isOutside = e.clientX < rect.left || e.clientX > rect.right ||
+                          e.clientY < rect.top  || e.clientY > rect.bottom;
+        if (isOutside) dialog.close();
+    });
+});
+
+// ── Edit User ────────────────────────────────────────────────────────────────
+function openEditUser(id, name, email, phone, cnic, roleId, isActive) {
+    document.getElementById('edit-name').value    = name;
+    document.getElementById('edit-email').value   = email;
+    document.getElementById('edit-phone').value   = phone;
+    document.getElementById('edit-cnic').value    = cnic;
+    document.getElementById('edit-role').value    = roleId;
+    document.getElementById('edit-status').value  = isActive;
+    document.getElementById('edit-user-form').action = `/users/update/${id}`;
+    openModal('edit-user-modal');
+}
+
+// ── Edit Role ────────────────────────────────────────────────────────────────
+function openEditRole(id, name, description, permissionIdsStr) {
+    // populate form fields
+    const modal = document.getElementById('add-role-modal');
+    const form = modal.querySelector('form');
+    // set name and description
+    form.querySelector('input[name="name"]').value = name || '';
+    const descEl = form.querySelector('textarea[name="description"]');
+    if (descEl) descEl.value = description || '';
+
+    // reset all permission checkboxes
+    form.querySelectorAll('input[name="permission_ids"]').forEach(cb => cb.checked = false);
+
+    // mark selected permissions
+    const selected = (permissionIdsStr || '').split(',').filter(s => s.length > 0);
+    if (selected.length) {
+        form.querySelectorAll('input[name="permission_ids"]').forEach(cb => {
+            if (selected.includes(cb.value)) cb.checked = true;
+        });
+    }
+
+    // update form action to point to update endpoint
+    form.action = `/users/roles/update/${id}`;
+    // update modal title and submit button text
+    modal.querySelector('h2').textContent = `Edit Role`;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.textContent = 'Save Changes';
+
+    // ensure module master toggles reflect the selected perms
+    initModulePermToggles();
+
+    openModal('add-role-modal', false);
+}
+
+// ── Module permission toggle ──────────────────────────────────────────────────
+function toggleModulePerms(module) {
+    const masterCb  = document.getElementById(`module-${module}`);
+    const permBoxes = document.querySelectorAll(`input[data-module="${module}"]:not(#module-${module})`);
+    permBoxes.forEach(cb => {
+        if (cb.id === `perm-${module}-view`) {
+            cb.checked = masterCb.checked;
+            return;
+        }
+
+        cb.disabled = !masterCb.checked;
+        if (!masterCb.checked) {
+            cb.checked = false;
+        }
+    });
+}
+
+function initModulePermToggles() {
+    document.querySelectorAll('input[type="checkbox"][id^="module-"]').forEach(cb => {
+        const module = cb.dataset.module;
+        const permBoxes = Array.from(document.querySelectorAll(`input[data-module="${module}"]:not(#module-${module})`));
+        const anyChecked = permBoxes.some(p => p.checked);
+        cb.checked = anyChecked;
+        toggleModulePerms(module);
+    });
+}
+
+initModulePermToggles();
+
+// ── Search helper ───────────────────────────────────────────────────────────
+const searchInput = document.getElementById('search-input');
+const usersTableBody = document.getElementById('users-table-body');
+const rolesGrid = document.getElementById('roles-grid');
+
+function getActiveTab() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'users';
+}
+
+if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const query = encodeURIComponent(searchInput.value.trim());
+            const tab = getActiveTab();
+            const target = tab === 'roles' ? rolesGrid : usersTableBody;
+            if (!target) return;
+
+            fetch(`/users/search?q=${query}&tab=${tab}`, {
+                headers: {
+                    'Accept': 'text/html'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Search request failed');
+                return response.text();
+            })
+            .then(html => {
+                target.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+            });
+        }, 400);
+    });
+}
+</script>
+{% endblock %}

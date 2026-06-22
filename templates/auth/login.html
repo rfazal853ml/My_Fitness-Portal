@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ gym_name }}</title>
+    <link rel="stylesheet" href="/static/css/output.css">
+    <style>
+        .gym-bg {
+            background-image: url('/static/images/image.png');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex bg-[#0a1628]">
+
+    <!-- Left: Gym Photo -->
+    <div class="hidden lg:block lg:w-1/2 gym-bg relative">
+        <div class="absolute inset-0 bg-black/55"></div>
+    </div>
+
+    <!-- Right: Login Form -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#0d1b2e]">
+        <div class="w-full max-w-md">
+
+            <!-- Logo -->
+            <div class="flex items-center gap-3 mb-10">
+                <img src="/static/images/logo.png" alt="Gym25 Logo" class="w-12 h-12 object-contain">
+                <span class="text-white text-3xl font-bold tracking-tight">
+                    Gym<span class="text-[#41c2ef]">25</span>
+                </span>
+            </div>
+
+            <h1 class="text-white text-3xl font-bold mb-1">Sign in to your Account</h1>
+            <p class="text-gray-400 mb-8 text-sm">Welcome back!</p>
+
+            <!-- Success message -->
+            {% if request.query_params.get('success') %}
+            <div class="bg-green-500/15 border border-green-500/40 text-green-400 
+                        px-4 py-3 rounded-xl mb-5 text-sm">
+                ✓ {{ request.query_params.get('success') }}
+            </div>
+            {% endif %}
+
+            <!-- Error message -->
+            {% if error %}
+            <div class="bg-red-500/15 border border-red-500/40 text-red-400 
+                        px-4 py-3 rounded-xl mb-5 text-sm">
+                ✕ {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/auth/login" class="space-y-5">
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-gray-300 text-sm font-medium mb-2">Email</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2">
+                            <svg class="w-5 h-5 text-[#41c2ef]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                        </span>
+                        <input type="email" name="email" required
+                               placeholder="Enter Your Email Address"
+                               class="w-full bg-[#1a2942] text-gray-100 placeholder-gray-500
+                                      pl-12 pr-4 py-3.5 rounded-xl border border-[#2a3a52]
+                                      focus:outline-none focus:border-[#41c2ef] focus:ring-1 
+                                      focus:ring-[#41c2ef]/30 transition-colors text-sm">
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label class="block text-gray-300 text-sm font-medium mb-2">Password</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2">
+                            <svg class="w-5 h-5 text-[#41c2ef]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                        </span>
+                        <input type="password" id="password" name="password" required
+                               placeholder="Enter Your Password"
+                               class="w-full bg-[#1a2942] text-gray-100 placeholder-gray-500
+                                      pl-12 pr-12 py-3.5 rounded-xl border border-[#2a3a52]
+                                      focus:outline-none focus:border-[#41c2ef] focus:ring-1 
+                                      focus:ring-[#41c2ef]/30 transition-colors text-sm">
+                        <button type="button" onclick="togglePassword('password', 'login-eye')"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
+                            <svg id="login-eye" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                <path id="login-eye-slash" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M3 3l18 18" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Forgot Password -->
+                <div class="text-right">
+                    <a href="/auth/forgot-password"
+                       class="text-[#41c2ef] text-sm hover:text-[#41c2ef]/90 transition-colors">
+                        Forgot Password?
+                    </a>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit"
+                        class="w-full bg-[#41c2ef] hover:bg-[#41c2ef]/90 active:bg-[#41c2ef]/80
+                               text-gray-900 font-bold py-3.5 rounded-xl transition-colors
+                               text-sm tracking-wide">
+                    Login
+                </button>
+            </form>
+        </div>
+    </div>
+
+<script>
+    function togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const slash = document.getElementById('login-eye-slash');
+        const isCurrentlyHidden = input.type === 'password';
+        input.type = isCurrentlyHidden ? 'text' : 'password';
+        slash.classList.toggle('hidden', isCurrentlyHidden);
+    }
+</script>
+</body>
+</html>
