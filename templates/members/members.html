@@ -1,0 +1,991 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{# ── Stats Row ──────────────────────────────────────────────────────────── #}
+<div class="grid grid-cols-4 gap-4 mb-6">
+  {% for label, value in [
+      ('Total Members', stats.total),
+      ('Active',        stats.active),
+      ('Male',          stats.male),
+      ('Female',        stats.female),
+  ] %}
+  <div class="bg-[#1A2236] rounded-2xl p-5 flex items-center gap-4 shadow-[0_22px_50px_rgba(6,15,32,0.30)]">
+    <div class="w-12 h-12 rounded-xl bg-[#41C2EF] flex items-center justify-center flex-shrink-0">
+      <svg class="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+    </div>
+    <div class="min-w-0 border-l border-[#122a44] pl-4">
+      <p class="text-[#94b1d2] text-xs font-semibold uppercase tracking-wider mb-0.5">{{ label }}</p>
+      <p class="text-white text-2xl font-bold tracking-tight">{{ value }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Filters + Add Button ───────────────────────────────────────────────── #}
+<div class="flex items-center gap-3 mb-6 flex-wrap">
+  {# Search #}
+  <div class="relative flex-1 min-w-[220px] max-w-xs">
+    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#527195]">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+    </span>
+    <input id="search-input" type="text" value="{{ search }}"
+           placeholder="Search by name, ID, phone..."
+           class="w-full bg-[#1A2236] rounded-2xl pl-11 pr-4 py-3 text-sm text-gray-100
+                  placeholder-[#527195] focus:outline-none focus:ring-1 focus:ring-[#41C2EF]/50 transition-all">
+  </div>
+
+  {# Plan filter #}
+  <select id="filter-plan"
+          class="bg-[#1A2236] border border-[#1c3152] rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none">
+    <option value="">All Plans</option>
+    {% for p in plans %}
+    <option value="{{ p.id }}" {% if plan_id == p.id %}selected{% endif %}>{{ p.name | capitalize }}</option>
+    {% endfor %}
+  </select>
+
+  {# Status filter #}
+  <select id="filter-status"
+          class="bg-[#1A2236] border border-[#1c3152] rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none">
+    <option value="">All Status</option>
+    <option value="active"   {% if status == 'active'   %}selected{% endif %}>Active</option>
+    <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option>
+  </select>
+
+  {# Gender filter #}
+  <select id="filter-gender"
+          class="bg-[#1A2236] border border-[#1c3152] rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none">
+    <option value="">Select Gender</option>
+    <option value="male"   {% if gender == 'male'   %}selected{% endif %}>Male</option>
+    <option value="female" {% if gender == 'female' %}selected{% endif %}>Female</option>
+  </select>
+
+  <button onclick="openAddMember()"
+          class="ml-auto flex items-center gap-2 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900
+                 font-semibold px-5 py-3 rounded-2xl text-sm transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    </svg>
+    Add Member
+  </button>
+</div>
+
+{# ── Members Table ─────────────────────────────────────────────────────── #}
+<div class="bg-[#1A2236] rounded-2xl overflow-hidden shadow-[0_22px_50px_rgba(6,15,32,0.30)]">
+  <div class="overflow-x-auto">
+    <table class="w-full border-separate border-spacing-0">
+      <thead>
+        <tr class="bg-[#0b182d]">
+          <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">ID</th>
+          <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Member</th>
+          <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Phone</th>
+          <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Plan</th>
+          <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Joining Date</th>
+          <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Expiry Date</th>
+          <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Fee Status</th>
+          <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Status</th>
+          <th class="text-right text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Action</th>
+        </tr>
+      </thead>
+      <tbody id="members-tbody">
+        {% include "members/partials/_member_rows.html" %}
+      </tbody>
+    </table>
+
+    {% if not members %}
+    <div class="text-center py-16 text-[#94b1d2]">
+      <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      <p class="text-sm font-medium">No members found</p>
+    </div>
+    {% endif %}
+  </div>
+
+  {# Pagination #}
+  {% if total_pages > 1 %}
+  <div class="flex items-center justify-between px-6 py-4 border-t border-[#122645]">
+    <span class="text-xs text-[#94b1d2]">Showing {{ members | length }} of {{ total }} members</span>
+    <div class="flex items-center gap-2">
+      <button id="prev-btn" onclick="changePage({{ page - 1 }})"
+              class="px-4 py-2 rounded-xl text-sm font-medium border border-[#1c3152] text-[#94b1d2]
+                     hover:text-white hover:bg-[#11213c] transition-colors
+                     {% if page <= 1 %}opacity-40 cursor-not-allowed{% endif %}"
+              {% if page <= 1 %}disabled{% endif %}>
+        Previous
+      </button>
+      {% for p in range(1, total_pages + 1) %}
+      <button onclick="changePage({{ p }})"
+              class="w-9 h-9 rounded-xl text-sm font-bold transition-colors
+                     {% if p == page %}bg-[#41c2ef] text-gray-900{% else %}border border-[#1c3152] text-[#94b1d2] hover:text-white hover:bg-[#11213c]{% endif %}">
+        {{ p }}
+      </button>
+      {% endfor %}
+      <button id="next-btn" onclick="changePage({{ page + 1 }})"
+              class="px-4 py-2 rounded-xl text-sm font-medium border border-[#1c3152] text-[#94b1d2]
+                     hover:text-white hover:bg-[#11213c] transition-colors
+                     {% if page >= total_pages %}opacity-40 cursor-not-allowed{% endif %}"
+              {% if page >= total_pages %}disabled{% endif %}>
+        Next
+      </button>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+
+{# ════════════════════════════════════════════════════════════════════════════
+   CNIC VERIFICATION MODAL (shown first when clicking Add Member)
+   ════════════════════════════════════════════════════════════════════════════ #}
+<dialog id="cnic-verify-modal"
+        class="bg-[#1A2236] rounded-2xl p-8 w-full max-w-lg shadow-[0_32px_80px_rgba(1,10,26,0.5)] backdrop:bg-black/70">
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-white text-xl font-bold">Member Identity Verification</h2>
+    <button onclick="closeModal('cnic-verify-modal')" class="text-[#94b1d2] hover:text-white">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="space-y-5">
+    <div>
+      <label class="block text-[#94b1d2] text-sm font-medium mb-3">CNIC Type <span class="text-red-400">*</span></label>
+      <div class="space-y-3">
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input type="radio" name="verify_cnic_type" value="member" checked
+                 class="w-4 h-4 accent-[#41c2ef]">
+          <span class="text-white text-sm">Member's CNIC (18+)</span>
+        </label>
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input type="radio" name="verify_cnic_type" value="guardian"
+                 class="w-4 h-4 accent-[#41c2ef]">
+          <span class="text-white text-sm">Guardian's CNIC (For members under 18)</span>
+        </label>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-[#94b1d2] text-sm font-medium mb-2">CNIC <span class="text-red-400">*</span></label>
+      <input id="verify-cnic-input" type="text" placeholder="Enter CNIC number"
+             class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                    text-gray-100 placeholder-[#527195] text-sm focus:outline-none focus:border-[#41c2ef] transition-colors">
+      <p id="cnic-verify-error" class="text-red-400 text-xs mt-2 hidden"></p>
+      <p class="text-[#527195] text-xs mt-2 flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+        Guardian's CNIC (For members under 18)
+      </p>
+    </div>
+  </div>
+
+  <div class="flex gap-3 mt-8">
+    <button onclick="closeModal('cnic-verify-modal')"
+            class="flex-1 border border-[#1c3152] text-[#94b1d2] hover:text-white hover:bg-[#11213c]
+                   py-3 rounded-xl text-sm font-medium transition-colors">
+      Cancel
+    </button>
+    <button onclick="proceedToAddMember()"
+            class="flex-1 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900
+                   font-bold py-3 rounded-xl text-sm transition-colors">
+      Continue
+    </button>
+  </div>
+</dialog>
+
+
+{# ════════════════════════════════════════════════════════════════════════════
+   ADD / EDIT MEMBER MODAL (large, scrollable)
+   ════════════════════════════════════════════════════════════════════════════ #}
+<dialog id="member-modal"
+        class="bg-[#1A2236] rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto
+               shadow-[0_32px_80px_rgba(1,10,26,0.5)] backdrop:bg-black/70">
+  <div class="sticky top-0 bg-[#1A2236] z-10 flex items-center justify-between px-8 pt-8 pb-4 border-b border-[#122645]">
+    <h2 id="modal-title" class="text-white text-xl font-bold">Add Member</h2>
+    <button onclick="closeModal('member-modal')" class="text-[#94b1d2] hover:text-white">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <form id="member-form" method="POST" action="/members/create" enctype="multipart/form-data" class="px-8 pb-8 pt-6 space-y-8">
+    <input type="hidden" id="form-member-id" name="_member_id" value="">
+
+    {# ── Personal Information ── #}
+    <section>
+      <h3 class="text-white font-bold text-base mb-5">Personal Information</h3>
+      <div class="grid grid-cols-2 gap-4">
+
+        <div>
+          <label class="field-label">Full Name <span class="text-red-400">*</span></label>
+          <input type="text" name="full_name" id="f-full_name" required placeholder="Enter full name" class="field-input">
+        </div>
+        <div>
+          <label class="field-label">Father's Name <span class="text-red-400">*</span></label>
+          <input type="text" name="father_name" id="f-father_name" placeholder="Enter father name" class="field-input">
+        </div>
+
+        <div>
+          <label class="field-label">Age <span class="text-red-400">*</span></label>
+          <input type="number" name="age" id="f-age" min="1" max="120" placeholder="Enter your age" class="field-input">
+        </div>
+        <div>
+          <label class="field-label">Date of Birth</label>
+          <input type="date" name="date_of_birth" id="f-date_of_birth" class="field-input">
+        </div>
+
+        <div class="col-span-2">
+          <label class="field-label">CNIC Type <span class="text-red-400">*</span></label>
+          <div class="flex gap-6 mt-1">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="cnic_type" id="cnic-type-member" value="member" checked class="accent-[#41c2ef]">
+              <span class="text-white text-sm">Member's CNIC (18+)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="cnic_type" id="cnic-type-guardian" value="guardian" class="accent-[#41c2ef]">
+              <span class="text-white text-sm">Guardian's CNIC (For members under 18)</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="field-label">CNIC <span class="text-red-400">*</span></label>
+          <input type="text" name="cnic" id="f-cnic" required placeholder="Enter CNIC number" class="field-input">
+        </div>
+        <div>
+          <label class="field-label">Phone Number <span class="text-red-400">*</span></label>
+          <input type="text" name="phone" id="f-phone" required placeholder="Enter phone number" class="field-input">
+        </div>
+
+        <div>
+          <label class="field-label">Gender</label>
+          <select name="gender" id="f-gender" class="field-input">
+            <option value="">Select gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Blood Group</label>
+          <input type="text" name="blood_group" id="f-blood_group" placeholder="Enter blood group" class="field-input">
+        </div>
+
+        <div>
+          <label class="field-label">Email (Optional)</label>
+          <input type="email" name="email" id="f-email" placeholder="Enter your email" class="field-input">
+        </div>
+        <div>
+          <label class="field-label">Joining Date</label>
+          <input type="date" name="joining_date" id="f-joining_date" class="field-input">
+        </div>
+
+        <div>
+          <label class="field-label">Health Issues</label>
+          <div class="flex items-center bg-[#0b182d] border border-[#1c3152] rounded-xl pr-3">
+            <input type="text" id="hi-input" placeholder="Health Issues"
+                   class="flex-1 bg-transparent pl-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none">
+            <button type="button" onclick="addHealthIssue()"
+                    class="flex-shrink-0 bg-[#41C2EF] text-gray-900 p-1 rounded-full">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/>
+              </svg>
+            </button>
+          </div>
+          <div id="hi-tags" class="flex flex-wrap gap-2 mt-2"></div>
+          <input type="hidden" name="health_issues_json" id="hi-json" value="[]">
+        </div>
+        <div>
+          <label class="field-label">Address</label>
+          <input type="text" name="address" id="f-address" placeholder="Enter your address" class="field-input">
+        </div>
+
+        <div>
+          <label class="field-label">Admission Fee</label>
+          <select name="admission_fee" id="f-admission_fee" class="field-input">
+            <option value="0">0</option>
+            <option value="1000">1,000</option>
+            <option value="2000">2,000</option>
+            <option value="3000">3,000</option>
+            <option value="5000">5,000</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Discount</label>
+          <select name="discount_percent" id="f-discount_percent" class="field-input">
+            <option value="0">0%</option>
+            <option value="5">5%</option>
+            <option value="10">10%</option>
+            <option value="15">15%</option>
+            <option value="20">20%</option>
+            <option value="25">25%</option>
+            <option value="50">50%</option>
+          </select>
+        </div>
+
+        <div class="col-span-2">
+          <label class="field-label">Profile Photo</label>
+          <input type="file" name="photo" accept="image/*"
+                 class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-2
+                        text-gray-100 text-sm focus:outline-none focus:border-[#41c2ef] transition-colors">
+        </div>
+
+      </div>
+    </section>
+
+    {# ── Membership Plan ── #}
+    <section>
+      <h3 class="text-white font-bold text-base mb-5">Membership Plan</h3>
+      <div class="grid grid-cols-3 gap-4 mb-5" id="plan-cards">
+        {% for p in plans %}
+        <div onclick="selectPlan('{{ p.id }}', '{{ p.name }}', {{ p.price }}, {{ p.duration_days }})"
+             data-plan-id="{{ p.id }}"
+             class="plan-card cursor-pointer border border-[#1c3152] rounded-2xl p-5 text-center
+                    hover:border-[#41c2ef] transition-all">
+          <p class="text-white font-semibold text-base capitalize mb-1">{{ p.name }}</p>
+          <p class="text-[#41c2ef] font-black text-2xl mb-4">{{ p.price_display }}</p>
+          <button type="button"
+                  class="plan-btn w-full py-2 rounded-xl text-sm font-bold transition-colors
+                         bg-[#0b182d] text-[#94b1d2] border border-[#1c3152] hover:bg-[#41c2ef] hover:text-gray-900">
+            Choose Plan
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+      <input type="hidden" name="plan_id" id="f-plan_id" value="">
+
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="field-label">Duration</label>
+          <select name="_duration_preset" id="f-duration-preset" onchange="applyDuration()"
+                  class="field-input">
+            <option value="">Select</option>
+            <option value="30">1 Month</option>
+            <option value="90">3 Months</option>
+            <option value="180">6 Months</option>
+            <option value="240">8 Months</option>
+            <option value="365">1 Year</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Start Date <span class="text-red-400">*</span></label>
+          <input type="date" name="membership_start" id="f-membership_start" class="field-input"
+                 onchange="calcExpiry()">
+        </div>
+        <div>
+          <label class="field-label">Expiry Date</label>
+          <input type="date" name="membership_expiry" id="f-membership_expiry" class="field-input" readonly>
+        </div>
+      </div>
+    </section>
+
+    {# ── Payment Summary ── #}
+    <section>
+      <h3 class="text-white font-bold text-base mb-4">Payment</h3>
+      <div id="payment-card"
+           class="hidden rounded-2xl p-5 bg-gradient-to-br from-[#0d2a4a] to-[#091828] border border-[#1c3152]">
+        <span id="pay-plan-badge"
+              class="text-xs font-bold uppercase bg-[#0b182d] px-3 py-1 rounded-full text-[#41c2ef] mb-3 inline-block"></span>
+        <p id="pay-amount" class="text-white text-3xl font-black mb-1"></p>
+        <p id="pay-admission" class="text-[#94b1d2] text-sm"></p>
+      </div>
+    </section>
+
+    {# ── Notes ── #}
+    <section>
+      <h3 class="text-white font-bold text-base mb-4">Notes</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="field-label">Title</label>
+          <input type="text" name="note_title" id="f-note_title" placeholder="Add title" class="field-input">
+        </div>
+        <div>
+          <label class="field-label">Description</label>
+          <textarea name="note_description" id="f-note_description" rows="3"
+                    placeholder="Enter description"
+                    class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                           text-gray-100 placeholder-[#527195] text-sm focus:outline-none
+                           focus:border-[#41c2ef] transition-colors resize-none"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <div class="flex justify-end gap-3 pt-2 border-t border-[#122645]">
+      <button type="button" onclick="closeModal('member-modal')"
+              class="px-6 py-2.5 border border-[#1c3152] text-[#94b1d2] hover:text-white
+                     hover:bg-[#11213c] rounded-xl text-sm font-medium transition-colors">
+        Cancel
+      </button>
+      <button type="submit" id="modal-submit-btn"
+              class="px-6 py-2.5 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900
+                     rounded-xl text-sm font-semibold transition-colors">
+        Add
+      </button>
+    </div>
+  </form>
+</dialog>
+
+
+{# ════════════════════════════════════════════════════════════════════════════
+   MEMBER PROFILE MODAL (view-only, tabbed)
+   ════════════════════════════════════════════════════════════════════════════ #}
+<dialog id="profile-modal"
+        class="bg-[#1A2236] rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto
+               shadow-[0_32px_80px_rgba(1,10,26,0.5)] backdrop:bg-black/70">
+  <div class="sticky top-0 bg-[#1A2236] z-10 px-8 pt-8 pb-0 border-b border-[#122645]">
+    {# Header #}
+    <div class="flex items-start justify-between mb-6">
+      <div class="flex items-center gap-4">
+        <div id="p-avatar"
+             class="w-16 h-16 rounded-full bg-[#122d4f] border-2 border-[#41c2ef]
+                    flex items-center justify-center text-[#41c2ef] text-xl font-bold flex-shrink-0">
+          AR
+        </div>
+        <div>
+          <h2 id="p-name"  class="text-white text-xl font-bold">—</h2>
+          <p  id="p-phone" class="text-[#94b1d2] text-sm mt-0.5">—</p>
+          <p  id="p-email" class="text-[#94b1d2] text-xs">—</p>
+          <div class="flex items-center gap-2 mt-2">
+            <span id="p-plan-badge"  class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#0b182d] border border-[#1c3152] text-[#94b1d2]">—</span>
+            <span id="p-bio-badge"   class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 hidden">⊙ Biometric</span>
+            <span id="p-gender-age"  class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#0b182d] border border-[#1c3152] text-[#94b1d2]">—</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="text-center bg-[#0b182d] border border-[#1c3152] rounded-2xl px-5 py-3 min-w-[80px]">
+          <p id="p-days" class="text-white text-2xl font-black">—</p>
+          <p class="text-[#94b1d2] text-xs mt-0.5">Days Active</p>
+        </div>
+        <div class="text-center bg-[#0b182d] border border-[#1c3152] rounded-2xl px-5 py-3 min-w-[80px]">
+          <p id="p-rate" class="text-white text-2xl font-black">—</p>
+          <p class="text-[#94b1d2] text-xs mt-0.5">Attendance</p>
+        </div>
+        <div class="text-center bg-[#0b182d] border border-[#1c3152] rounded-2xl px-5 py-3 min-w-[80px]">
+          <p id="p-fee-status" class="text-2xl font-black text-green-400">—</p>
+          <p class="text-[#94b1d2] text-xs mt-0.5">Fee status</p>
+        </div>
+        <button onclick="closeModal('profile-modal')" class="ml-2 text-[#94b1d2] hover:text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    {# Tabs #}
+    <div class="flex gap-1">
+      {% for tab in ['Personal Info','Attendance','Payment','Memberships','Notes'] %}
+      <button onclick="switchTab('{{ tab | lower | replace(' ','_') }}')"
+              data-tab="{{ tab | lower | replace(' ','_') }}"
+              class="profile-tab px-5 py-3 text-sm font-semibold border-b-2 transition-colors
+                     border-transparent text-[#94b1d2] hover:text-white">
+        {{ tab }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="px-8 py-6" id="profile-tab-content">
+    <div class="text-center py-10 text-[#94b1d2]">Loading…</div>
+  </div>
+</dialog>
+
+{% endblock %}
+
+
+{% block scripts %}
+<style>
+.field-label  { @apply block text-[#94b1d2] text-sm font-medium mb-2; }
+.field-input  { @apply w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none focus:border-[#41c2ef] transition-colors; }
+.plan-card.selected  { border-color: #41c2ef; background: #0d2d4a; }
+.plan-card.selected .plan-btn { background: #41c2ef; color: #111827; }
+.profile-tab.active  { border-color: #41c2ef; color: #fff; }
+</style>
+
+<script>
+// ─── Global state ─────────────────────────────────────────────────────────────
+let hiTags = [];
+let selectedPlanDays = 0;
+let currentProfileId = null;
+
+// ─── Modal helpers ────────────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).close(); }
+
+document.querySelectorAll('dialog').forEach(d => {
+  d.addEventListener('click', e => {
+    const r = d.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)
+      d.close();
+  });
+});
+
+// ─── Add Member flow ──────────────────────────────────────────────────────────
+function openAddMember() {
+  document.getElementById('verify-cnic-input').value = '';
+  document.getElementById('cnic-verify-error').classList.add('hidden');
+  document.getElementById('cnic-verify-modal').showModal();
+}
+
+async function proceedToAddMember() {
+  const cnic = document.getElementById('verify-cnic-input').value.trim();
+  const errEl = document.getElementById('cnic-verify-error');
+  errEl.classList.add('hidden');
+  if (!cnic) { errEl.textContent = 'Please enter a CNIC number.'; errEl.classList.remove('hidden'); return; }
+
+  try {
+    const res  = await fetch(`/members/check-cnic?cnic=${encodeURIComponent(cnic)}`);
+    const data = await res.json();
+    if (data.exists) {
+      errEl.textContent = 'A member with this CNIC already exists.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+  } catch(e) { /* ignore network errors */ }
+
+  const cnicType = document.querySelector('input[name="verify_cnic_type"]:checked')?.value || 'member';
+  closeModal('cnic-verify-modal');
+  openMemberModal();
+  document.getElementById('f-cnic').value = cnic;
+  const radio = document.getElementById(cnicType === 'guardian' ? 'cnic-type-guardian' : 'cnic-type-member');
+  if (radio) radio.checked = true;
+}
+
+function openMemberModal(member = null) {
+  const form = document.getElementById('member-form');
+  const title = document.getElementById('modal-title');
+  const submitBtn = document.getElementById('modal-submit-btn');
+
+  // Reset
+  form.reset();
+  hiTags = [];
+  renderHiTags();
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('payment-card').classList.add('hidden');
+  document.getElementById('f-plan_id').value = '';
+  document.getElementById('form-member-id').value = '';
+
+  if (member) {
+    title.textContent = 'Edit Member';
+    submitBtn.textContent = 'Update';
+    form.action = `/members/update/${member.id}`;
+    document.getElementById('form-member-id').value = member.id;
+
+    // Fill fields
+    ['full_name','father_name','age','phone','blood_group','email','address'].forEach(f => {
+      const el = document.getElementById(`f-${f}`);
+      if (el) el.value = member[f] || '';
+    });
+    if (member.date_of_birth) document.getElementById('f-date_of_birth').value = member.date_of_birth.slice(0,10);
+    if (member.joining_date)  document.getElementById('f-joining_date').value  = member.joining_date.slice(0,10);
+    if (member.gender) document.getElementById('f-gender').value = member.gender;
+    if (member.discount_percent) document.getElementById('f-discount_percent').value = member.discount_percent;
+    if (member.admission_fee)    document.getElementById('f-admission_fee').value    = member.admission_fee;
+    const cnicRadio = document.getElementById(member.cnic_type === 'guardian' ? 'cnic-type-guardian' : 'cnic-type-member');
+    if (cnicRadio) cnicRadio.checked = true;
+    document.getElementById('f-cnic').value = member.cnic || '';
+
+    // Health issues
+    hiTags = Array.isArray(member.health_issues) ? [...member.health_issues] : [];
+    renderHiTags();
+
+    // Active membership
+    const ms = member.membership;
+    if (ms) {
+      const planId = ms.plan_id;
+      document.getElementById('f-plan_id').value = planId || '';
+      if (ms.start_date) document.getElementById('f-membership_start').value = ms.start_date.slice(0,10);
+      if (ms.end_date)   document.getElementById('f-membership_expiry').value = ms.end_date.slice(0,10);
+      // Highlight active plan card
+      document.querySelectorAll('.plan-card').forEach(c => {
+        if (c.dataset.planId === planId) {
+          c.classList.add('selected');
+          const btn = c.querySelector('.plan-btn');
+          if (btn) btn.textContent = '✓ Current Plan';
+        }
+      });
+    }
+  } else {
+    title.textContent = 'Add Member';
+    submitBtn.textContent = 'Add';
+    form.action = '/members/create';
+    // Set today as default joining date
+    document.getElementById('f-joining_date').value = new Date().toISOString().slice(0,10);
+  }
+
+  document.getElementById('member-modal').showModal();
+}
+
+// ─── Health Issues ────────────────────────────────────────────────────────────
+function addHealthIssue() {
+  const input = document.getElementById('hi-input');
+  const val = input.value.trim();
+  if (!val || hiTags.includes(val)) { input.value = ''; return; }
+  hiTags.push(val);
+  renderHiTags();
+  input.value = '';
+}
+
+function removeHI(i) { hiTags.splice(i, 1); renderHiTags(); }
+
+function renderHiTags() {
+  const container = document.getElementById('hi-tags');
+  const hidden    = document.getElementById('hi-json');
+  container.innerHTML = hiTags.map((t, i) => `
+    <span class="inline-flex items-center gap-1 bg-[#0b182d] border border-[#1c3152] text-gray-300
+                 text-xs font-medium rounded-lg px-3 py-1.5">
+      ${t}
+      <button type="button" onclick="removeHI(${i})"
+              class="ml-1 text-[#527195] hover:text-red-400">✕</button>
+    </span>`).join('');
+  hidden.value = JSON.stringify(hiTags);
+}
+
+document.getElementById('hi-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addHealthIssue(); }
+});
+
+// ─── Plan selection ───────────────────────────────────────────────────────────
+function selectPlan(id, name, price, days) {
+  document.querySelectorAll('.plan-card').forEach(c => {
+    c.classList.remove('selected');
+    const btn = c.querySelector('.plan-btn');
+    if (btn) btn.textContent = 'Choose Plan';
+  });
+  const card = document.querySelector(`.plan-card[data-plan-id="${id}"]`);
+  if (card) {
+    card.classList.add('selected');
+    const btn = card.querySelector('.plan-btn');
+    if (btn) btn.textContent = '✓ Current Plan';
+  }
+  document.getElementById('f-plan_id').value = id;
+  selectedPlanDays = days;
+
+  // Payment card
+  const disc  = parseFloat(document.getElementById('f-discount_percent').value) || 0;
+  const admFee = parseFloat(document.getElementById('f-admission_fee').value) || 0;
+  const discounted = price * (1 - disc / 100);
+  const payCard = document.getElementById('payment-card');
+  payCard.classList.remove('hidden');
+  document.getElementById('pay-plan-badge').textContent  = `${name} Membership`;
+  document.getElementById('pay-amount').textContent      = `PKR ${discounted.toLocaleString()} ${disc > 0 ? disc + '% off' : ''}`;
+  document.getElementById('pay-admission').textContent   = admFee > 0 ? `Admission Fee — PKR ${admFee.toLocaleString()} (One-Time)` : '';
+
+  calcExpiry();
+}
+
+// ─── Expiry auto-calc ─────────────────────────────────────────────────────────
+function applyDuration() {
+  const sel = document.getElementById('f-duration-preset').value;
+  if (sel) selectedPlanDays = parseInt(sel);
+  calcExpiry();
+}
+
+function calcExpiry() {
+  const start = document.getElementById('f-membership_start').value;
+  if (!start || !selectedPlanDays) return;
+  const d = new Date(start);
+  d.setDate(d.getDate() + selectedPlanDays);
+  document.getElementById('f-membership_expiry').value = d.toISOString().slice(0,10);
+}
+
+// ─── Search + filters ─────────────────────────────────────────────────────────
+let searchTimer;
+function triggerSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(async () => {
+    const q      = document.getElementById('search-input').value.trim();
+    const planId = document.getElementById('filter-plan').value;
+    const status = document.getElementById('filter-status').value;
+    const gender = document.getElementById('filter-gender').value;
+    const params = new URLSearchParams({ q, plan_id: planId, status, gender });
+    try {
+      const res  = await fetch(`/members/search?${params}`);
+      const html = await res.text();
+      document.getElementById('members-tbody').innerHTML = html;
+    } catch(e) { console.error(e); }
+  }, 350);
+}
+
+['search-input','filter-plan','filter-status','filter-gender'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input',  triggerSearch);
+  document.getElementById(id)?.addEventListener('change', triggerSearch);
+});
+
+function changePage(p) {
+  const url = new URL(window.location);
+  url.searchParams.set('page', p);
+  window.location = url.toString();
+}
+
+// ─── Toggle member status ─────────────────────────────────────────────────────
+async function toggleMemberStatus(id) {
+  try {
+    const r = await fetch(`/members/toggle-status/${id}`, { method: 'POST' });
+    const d = await r.json();
+    if (d.success) triggerSearch();
+  } catch(e) { console.error(e); }
+}
+
+// ─── Profile Modal ────────────────────────────────────────────────────────────
+async function openProfile(memberId) {
+  currentProfileId = memberId;
+  document.getElementById('profile-modal').showModal();
+  // Reset tabs
+  document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+  const firstTab = document.querySelector('.profile-tab[data-tab="personal_info"]');
+  if (firstTab) firstTab.classList.add('active');
+
+  // Load summary
+  try {
+    const r = await fetch(`/members/profile/${memberId}`);
+    const d = await r.json();
+    const m = d.member;
+    document.getElementById('p-name').textContent  = m.full_name || '—';
+    document.getElementById('p-phone').textContent = m.phone || '—';
+    document.getElementById('p-email').textContent = m.email || '—';
+    document.getElementById('p-days').textContent  = d.days_active || '0';
+    document.getElementById('p-rate').textContent  = (d.attendance_rate || 0) + '%';
+    const fs = m.fee_status || 'unpaid';
+    const fsEl = document.getElementById('p-fee-status');
+    fsEl.textContent = fs.charAt(0).toUpperCase() + fs.slice(1);
+    fsEl.className = `text-2xl font-black ${fs === 'paid' ? 'text-green-400' : fs === 'expired' ? 'text-orange-400' : 'text-red-400'}`;
+    // Avatar initials
+    const initials = (m.full_name || 'M').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+    const avatarEl = document.getElementById('p-avatar');
+    if (m.photo_url) {
+      avatarEl.innerHTML = `<img src="${m.photo_url}" class="w-full h-full object-cover rounded-full">`;
+    } else {
+      avatarEl.textContent = initials;
+    }
+    document.getElementById('p-plan-badge').textContent  = m.plan_name || '—';
+    document.getElementById('p-gender-age').textContent  = [m.gender ? m.gender.charAt(0).toUpperCase() + m.gender.slice(1) : '', m.age ? m.age + ' Yrs' : ''].filter(Boolean).join(' ');
+  } catch(e) { console.error(e); }
+
+  loadTab('personal_info');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.profile-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+  loadTab(tab);
+}
+
+async function loadTab(tab) {
+  const content = document.getElementById('profile-tab-content');
+  content.innerHTML = '<div class="text-center py-10 text-[#94b1d2]">Loading…</div>';
+
+  if (tab === 'personal_info') {
+    try {
+      const r = await fetch(`/members/profile/${currentProfileId}`);
+      const d = await r.json();
+      const m = d.member;
+      const fi = (label, val) => `
+        <div class="bg-[#0b182d] border border-[#1c3152] rounded-xl p-4">
+          <p class="text-[#527195] text-xs font-medium mb-1">${label}</p>
+          <p class="text-white text-sm font-semibold">${val || '—'}</p>
+        </div>`;
+      content.innerHTML = `
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          ${fi('Full Name', m.full_name)}
+          ${fi('Member ID', `<span class="text-[#41c2ef]">${m.member_id}</span>`)}
+          ${fi('Phone Number', m.phone)}
+          ${fi('Email', m.email)}
+          ${fi('Date of Birth', m.date_of_birth ? m.date_of_birth.slice(0,10) : '')}
+          ${fi('Gender', m.gender ? m.gender.charAt(0).toUpperCase() + m.gender.slice(1) : '')}
+          ${fi('Address', m.address)}
+          ${fi('Age', m.age)}
+          ${fi('Member\'s Guardian CNIC', m.cnic)}
+          ${fi('Joining Date', m.joining_date_fmt)}
+          ${fi('Admission Fee', m.admission_fee ? 'PKR ' + Number(m.admission_fee).toLocaleString() : '')}
+          ${fi('Discount', m.discount_percent ? m.discount_percent + '%' : '0%')}
+        </div>
+        <div class="border-t border-[#122645] pt-4">
+          <p class="text-xs uppercase tracking-[0.2em] text-[#527195] font-bold mb-3">Biometric Access</p>
+          <div class="grid grid-cols-2 gap-3">
+            ${fi('Biometric Status', '<span class="text-green-400">Enrolled</span>')}
+            ${fi('Last Entry', d.last_entry || 'Never')}
+          </div>
+        </div>`;
+    } catch(e) { content.innerHTML = '<p class="text-red-400 text-sm">Failed to load.</p>'; }
+
+  } else if (tab === 'attendance') {
+    try {
+      const d = await (await fetch(`/members/profile/${currentProfileId}/attendance`)).json();
+      const stat = (label, val) => `
+        <div class="bg-[#0b182d] border border-[#1c3152] rounded-2xl p-5 text-center">
+          <p class="text-white text-3xl font-black mb-1">${val}</p>
+          <p class="text-[#94b1d2] text-xs">${label}</p>
+        </div>`;
+      const presentSet = new Set(d.present_dates || []);
+      // Build 12-week heatmap starting from 12 weeks ago
+      const today = new Date();
+      const start = new Date(today);
+      start.setDate(start.getDate() - 83); // 12 weeks back
+      // Align to Sunday
+      start.setDate(start.getDate() - start.getDay());
+
+      let weeks = [];
+      for (let w = 0; w < 12; w++) {
+        let days = [];
+        for (let day = 0; day < 7; day++) {
+          const d2 = new Date(start);
+          d2.setDate(start.getDate() + w * 7 + day);
+          const iso = d2.toISOString().slice(0,10);
+          const label = d2.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+          const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d2.getDay()];
+          days.push({ iso, label, dow, present: presentSet.has(iso) });
+        }
+        weeks.push(days);
+      }
+
+      const heatmapHTML = weeks.map(week => `
+        <div class="flex flex-col gap-1">
+          ${week.map(day => `
+            <div class="w-9 h-9 rounded-lg flex flex-col items-center justify-center text-center cursor-default
+                        ${day.present ? 'bg-[#41c2ef] text-gray-900' : 'bg-[#0b182d] border border-[#122645] text-[#527195]'}"
+                 title="${day.present ? 'Present' : 'Absent'}: ${day.label} (${day.dow})">
+              <span class="text-[9px] font-bold leading-none">${day.label.split(' ')[0]}</span>
+              <span class="text-[8px] leading-none opacity-70">${day.label.split(' ')[1]}</span>
+            </div>`).join('')}
+        </div>`).join('');
+
+      content.innerHTML = `
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          ${stat('Total Visits', d.total_visits)}
+          ${stat('Attendance Rate', d.attendance_rate + '%')}
+          ${stat('Avg Check In Time', d.avg_checkin || '—')}
+        </div>
+        <div class="border-t border-[#122645] pt-5">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-xs uppercase tracking-[0.2em] text-[#527195] font-bold">Attendance Heatmap</p>
+            <span class="text-[#94b1d2] text-xs">Last 12 weeks</span>
+          </div>
+          <div class="flex gap-1 overflow-x-auto pb-2">${heatmapHTML}</div>
+          <div class="flex items-center gap-3 mt-3">
+            <span class="text-[#94b1d2] text-xs">Present</span>
+            <div class="w-6 h-4 rounded bg-[#41c2ef]"></div>
+            <span class="text-[#94b1d2] text-xs">Absent</span>
+            <div class="w-6 h-4 rounded bg-[#0b182d] border border-[#122645]"></div>
+          </div>
+        </div>`;
+    } catch(e) { content.innerHTML = '<p class="text-red-400 text-sm">Failed to load.</p>'; }
+
+  } else if (tab === 'payment') {
+    try {
+      const payments = await (await fetch(`/members/profile/${currentProfileId}/payments`)).json();
+      if (!payments.length) {
+        content.innerHTML = '<p class="text-[#94b1d2] text-sm text-center py-10">No payment records found.</p>';
+        return;
+      }
+      content.innerHTML = `
+        <table class="w-full border-separate border-spacing-0">
+          <thead><tr class="bg-[#0b182d]">
+            ${['Receipt','Date','Plan','Method','Amount'].map(h => `<th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-4 py-3 border-b border-[#122645]">${h}</th>`).join('')}
+          </tr></thead>
+          <tbody class="divide-y divide-[#122645]">
+            ${payments.map(p => `<tr class="hover:bg-[#11213c]">
+              <td class="px-4 py-3 text-[#41c2ef] text-sm font-semibold">${p.receipt_id || p.id?.slice(0,8) || '—'}</td>
+              <td class="px-4 py-3 text-[#94b1d2] text-sm">${p.date_fmt}</td>
+              <td class="px-4 py-3 text-white text-sm">${(p.plans?.name || '—')}</td>
+              <td class="px-4 py-3 text-white text-sm capitalize">${p.payment_method || 'Cash'}</td>
+              <td class="px-4 py-3 text-white text-sm font-semibold">${p.amount_fmt}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+    } catch(e) { content.innerHTML = '<p class="text-red-400 text-sm">Failed to load.</p>'; }
+
+  } else if (tab === 'memberships') {
+    try {
+      const d = await (await fetch(`/members/profile/${currentProfileId}/memberships`)).json();
+      const curr = d.current;
+      content.innerHTML = `
+        <div class="border-b border-[#122645] pb-5 mb-5">
+          <p class="text-xs uppercase tracking-[0.2em] text-[#527195] font-bold mb-3">Current Plan</p>
+          ${curr ? `
+          <div class="flex items-center justify-between bg-[#0b182d] border border-[#1c3152] rounded-2xl px-6 py-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-[#41c2ef]/20 flex items-center justify-center">
+                <svg class="w-4 h-4 text-[#41c2ef]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-white font-bold capitalize">${curr.plans?.name || '—'}</p>
+                <p class="text-[#94b1d2] text-xs">Active until ${curr.end_date_fmt}</p>
+              </div>
+            </div>
+            <span class="text-[#41c2ef] font-black text-lg">${curr.price_fmt}</span>
+          </div>` : '<p class="text-[#94b1d2] text-sm">No active membership.</p>'}
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-[0.2em] text-[#527195] font-bold mb-3">Plan History</p>
+          <table class="w-full border-separate border-spacing-0">
+            <thead><tr class="bg-[#0b182d]">
+              ${['Plan','Start Date','Expiry Date'].map(h => `<th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-4 py-3 border-b border-[#122645]">${h}</th>`).join('')}
+            </tr></thead>
+            <tbody class="divide-y divide-[#122645]">
+              ${(d.history || []).map(h => `<tr class="hover:bg-[#11213c]">
+                <td class="px-4 py-3 text-white text-sm capitalize">${h.plan_name}</td>
+                <td class="px-4 py-3 text-[#94b1d2] text-sm">${h.start_date_fmt}</td>
+                <td class="px-4 py-3 text-[#94b1d2] text-sm">${h.end_date_fmt}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    } catch(e) { content.innerHTML = '<p class="text-red-400 text-sm">Failed to load.</p>'; }
+
+  } else if (tab === 'notes') {
+    try {
+      const notes = await (await fetch(`/members/profile/${currentProfileId}/notes`)).json();
+      if (!notes.length) {
+        content.innerHTML = '<p class="text-[#94b1d2] text-sm text-center py-10">No notes found.</p>';
+        return;
+      }
+      content.innerHTML = `
+        <table class="w-full border-separate border-spacing-0">
+          <thead><tr class="bg-[#0b182d]">
+            ${['Title','Created At','Description'].map((h,i) => `<th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-4 py-3 border-b border-[#122645] ${i===2?'w-1/2':''}">${h}</th>`).join('')}
+          </tr></thead>
+          <tbody class="divide-y divide-[#122645]">
+            ${notes.map((n,i) => {
+              const date = (n.created_at || '').slice(0,10);
+              const desc = n.description || '';
+              const short = desc.length > 80 ? desc.slice(0,80) + '…' : desc;
+              return `<tr class="hover:bg-[#11213c]">
+                <td class="px-4 py-3 text-white text-sm font-semibold align-top">${n.title || '—'}</td>
+                <td class="px-4 py-3 text-[#41c2ef] text-sm align-top whitespace-nowrap">${date}</td>
+                <td class="px-4 py-3 text-[#94b1d2] text-sm align-top">
+                  <span class="note-short-${i}">${short}</span>
+                  ${desc.length > 80 ? `<span class="note-full-${i} hidden">${desc}</span>
+                    <button onclick="toggleNote(${i})" class="ml-1 text-[#41c2ef] text-xs">▾</button>` : ''}
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`;
+    } catch(e) { content.innerHTML = '<p class="text-red-400 text-sm">Failed to load.</p>'; }
+  }
+}
+
+function toggleNote(i) {
+  const shortEl = document.querySelector(`.note-short-${i}`);
+  const fullEl  = document.querySelector(`.note-full-${i}`);
+  const btn     = fullEl?.nextElementSibling;
+  if (!fullEl) return;
+  const expanded = !fullEl.classList.contains('hidden');
+  fullEl.classList.toggle('hidden', expanded);
+  shortEl.classList.toggle('hidden', !expanded);
+  if (btn) btn.textContent = expanded ? '▾' : '▴';
+}
+</script>
+{% endblock %}
