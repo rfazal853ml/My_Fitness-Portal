@@ -14,7 +14,7 @@
             <img src="{{ u.photo_url }}" alt="{{ u.name }}"
                  class="w-10 h-10 rounded-xl object-cover border border-[#1c3152] shadow-[0_4px_12px_rgba(0,0,0,0.20)] flex-shrink-0">
             {% else %}
-            <div class="w-10 h-10 rounded-xl bg-[#122d4f] border border-[#2b5fad] flex-shrink-0
+            <div class="w-10 h-10 rounded-xl bg-[#122d4f] border border-gray-700 flex-shrink-0
                         flex items-center justify-center text-[#7ce3ff] text-sm font-semibold">
                 {{ u.name[0].upper() if u.name else '?' }}
             </div>
@@ -28,7 +28,7 @@
 
     <td class="px-6 py-4 border-b border-[#122645]">
         <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold
-                     bg-[#122d4f] border border-[#2b5fad] text-[#7ce3ff] capitalize">
+                     bg-[#122d4f] border border-gray-700 text-[#7ce3ff] capitalize">
             {{ (u.roles.name if u.roles else 'N/A') | capitalize }}
         </span>
     </td>
@@ -66,7 +66,7 @@
                 </svg>
             </button>
             <form method="POST" action="/users/delete/{{ u.id }}"
-                  onsubmit="return confirm('Delete {{ u.name }}? This cannot be undone.')">
+                  onsubmit="return confirmAction(this, 'Delete {{ u.name }}? This cannot be undone.')">
                 <button type="submit"
                         class="flex h-9 w-9 items-center justify-center rounded-xl border border-red-500/20 bg-[#091425] text-red-400 hover:bg-red-500/10 transition-colors"
                         title="Delete user">

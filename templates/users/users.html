@@ -38,7 +38,7 @@
                placeholder="{{ 'Search roles...' if tab == 'roles' else 'Search users...' }}"
                class="w-full bg-[#1A2236] rounded-2xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]
                       pl-12 pr-4 py-3 text-sm text-gray-100 placeholder-[#527195]
-                      focus:outline-none focus:border-[#2b5fad] transition-colors">
+                      focus:outline-none focus:border-gray-700 transition-colors">
     </div>
 
     <div class="flex items-center gap-3">
@@ -58,7 +58,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            Add New Role
+            Add Role
         </button>
         {% endif %}
     </div>
@@ -67,12 +67,12 @@
 <div class="flex gap-2 mb-6">
     <a href="/users/?tab=users"
        class="px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all border
-              {% if tab == 'users' %}bg-[#41c2ef] border-[#2b5fad] text-gray-900 {% else %}bg-[#1A2236] border-[#1c3152] text-[#94b1d2] hover:text-white hover:bg-[#11213c]{% endif %}">
+              {% if tab == 'users' %}bg-[#41c2ef] border-gray-700 text-gray-900 {% else %}bg-[#1A2236] border-[#1c3152] text-[#94b1d2] hover:text-white hover:bg-[#11213c]{% endif %}">
         Users
     </a>
     <a href="/users/?tab=roles"
        class="px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all border
-              {% if tab == 'roles' %}bg-[#41c2ef] border-[#2b5fad] text-gray-900 {% else %}bg-[#1A2236] border-[#1c3152] text-[#94b1d2] hover:text-white hover:bg-[#11213c]{% endif %}">
+              {% if tab == 'roles' %}bg-[#41c2ef] border-gray-700 text-gray-900 {% else %}bg-[#1A2236] border-[#1c3152] text-[#94b1d2] hover:text-white hover:bg-[#11213c]{% endif %}">
         Roles
     </a>
 </div>
@@ -140,7 +140,7 @@
 
         <div class="grid grid-cols-2 gap-3 pt-4 border-t border-[#122645] mt-auto">
             <button onclick="openEditRole('{{ role.id }}', '{{ role.name }}', '{{ role.description }}', '{{ role.permission_ids | join(',') }}')"
-                    class="flex-1 flex items-center justify-center gap-2 border border-[#2b5fad] hover:bg-[#41C2EF]/90 py-3 rounded-2xl text-sm font-semibold transition-all">
+                    class="flex-1 flex items-center justify-center gap-2 text-[#94b1d2] border border-gray-700 hover:bg-[#41C2EF]/90 hover:text-white py-3 rounded-2xl text-sm font-semibold transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -148,7 +148,7 @@
                 Edit
             </button>
             <form method="POST" action="/users/roles/delete/{{ role.id }}"
-                  onsubmit="return confirm('Delete role {{ role.name }}? This cannot be undone.')" class="flex-shrink-0">
+                  onsubmit="return confirmAction(this, 'Delete role {{ role.name }}? This cannot be undone.')" class="flex-shrink-0">
                 <button type="submit"
                         class="flex h-11 w-full items-center justify-center rounded-2xl border border-red-500/20 bg-[#1A2236]
                                text-red-400 hover:bg-red-500/10 transition-all">
@@ -189,34 +189,34 @@
                 <input type="text" name="name" required placeholder="Enter full name"
                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
                               text-gray-100 placeholder-[#527195] text-sm
-                              focus:outline-none focus:border-[#2b5fad] transition-all">
+                              focus:outline-none focus:border-gray-700 transition-all">
             </div>
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Email Address <span class="text-[#ff7d7d]">*</span></label>
                 <input type="email" name="email" required placeholder="Enter email"
                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
                               text-gray-100 placeholder-[#527195] text-sm
-                              focus:outline-none focus:border-[#2b5fad] transition-all">
+                              focus:outline-none focus:border-gray-700 transition-all">
             </div>
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Phone Number <span class="text-[#ff7d7d]">*</span></label>
                 <input type="text" name="phone" placeholder="Enter phone number"
                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
                               text-gray-100 placeholder-[#527195] text-sm
-                              focus:outline-none focus:border-[#2b5fad] transition-all">
+                              focus:outline-none focus:border-gray-700 transition-all">
             </div>
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">CNIC <span class="text-[#ff7d7d]">*</span></label>
                 <input type="text" name="cnic" placeholder="12345-1234567-1"
                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
                               text-gray-100 placeholder-[#527195] text-sm
-                              focus:outline-none focus:border-[#2b5fad] transition-all">
+                              focus:outline-none focus:border-gray-700 transition-all">
             </div>
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Role <span class="text-[#ff7d7d]">*</span></label>
                 <select name="role_id" required
                         class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
-                               text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                               text-gray-100 text-sm focus:outline-none focus:border-gray-700 transition-all">
                     <option value="" disabled selected>Select role</option>
                     {% for role in roles %}
                     <option value="{{ role.id }}">{{ role.name | capitalize }}</option>
@@ -228,12 +228,12 @@
                 <input type="text" name="address" placeholder="Enter address"
                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
                               text-gray-100 placeholder-[#527195] text-sm
-                              focus:outline-none focus:border-[#2b5fad] transition-all">
+                              focus:outline-none focus:border-gray-700 transition-all">
             </div>
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Profile Picture</label>
                 <input type="file" name="profile_pic" accept="image/*"
-                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-2 text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-2 text-gray-100 text-sm focus:outline-none focus:border-gray-700 transition-all">
             </div>
         </div>
 
@@ -243,8 +243,8 @@
 
         <div class="flex justify-end gap-3">
             <button type="button" onclick="closeModal('add-user-modal')"
-                    class="px-6 py-2.5 border border-[#1c3152] hover:border-[#2b5fad]
-                           text-[#94b1d2] rounded-xl text-sm font-medium transition-all">
+                    class="px-6 py-2.5 border border-[#1c3152] hover:border-gray-700
+                           text-[#94b1d2] hover:text-white rounded-xl text-sm font-medium transition-all">
                 Cancel
             </button>
             <button type="submit"
@@ -272,31 +272,31 @@
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Full Name</label>
                 <input type="text" name="name" id="edit-name" required
                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
-                              text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                              text-gray-100 text-sm focus:outline-none focus:border-gray-700 transition-all">
             </div>
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Email Address</label>
                 <input type="email" name="email" id="edit-email" required
                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
-                              text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                              text-gray-100 text-sm focus:outline-none focus:border-gray-700 transition-all">
             </div>
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Phone Number</label>
                 <input type="text" name="phone" id="edit-phone"
                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
-                              text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                              text-gray-100 text-sm focus:outline-none focus:border-gray-700 transition-all">
             </div>
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">CNIC</label>
                 <input type="text" name="cnic" id="edit-cnic"
                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
-                              text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                              text-gray-100 text-sm focus:outline-none focus:border-gray-700 transition-all">
             </div>
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Role</label>
                 <select name="role_id" id="edit-role"
                         class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
-                               text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                               text-gray-100 text-sm focus:outline-none focus:border-gray-700 transition-all">
                     {% for role in roles %}
                     <option value="{{ role.id }}">{{ role.name | capitalize }}</option>
                     {% endfor %}
@@ -306,7 +306,7 @@
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Status</label>
                 <select name="is_active" id="edit-status"
                         class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
-                               text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                               text-gray-100 text-sm focus:outline-none focus:border-gray-700 transition-all">
                     <option value="true">Active</option>
                     <option value="false">Inactive</option>
                 </select>
@@ -314,13 +314,13 @@
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Profile Picture</label>
                 <input type="file" name="profile_pic" accept="image/*"
-                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-2 text-gray-100 text-sm focus:outline-none focus:border-[#2b5fad] transition-all">
+                       class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-2 text-gray-100 text-sm focus:outline-none focus:border-gray-700 transition-all">
             </div>
         </div>
 
         <div class="flex justify-end gap-3">
             <button type="button" onclick="closeModal('edit-user-modal')"
-                    class="px-6 py-2.5 border border-[#1c3152] hover:border-[#2b5fad]
+                    class="px-6 py-2.5 border border-[#1c3152] hover:border-gray-700 hover:text-white
                            text-[#94b1d2] rounded-xl text-sm font-medium transition-all">
                 Cancel
             </button>
@@ -350,7 +350,7 @@
             <input type="text" name="name" required placeholder="e.g. Trainer, Manager"
                    class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
                           text-gray-100 placeholder-[#527195] text-sm
-                          focus:outline-none focus:border-[#2b5fad] transition-all">
+                          focus:outline-none focus:border-gray-700 transition-all">
         </div>
 
         <div class="mb-6">
@@ -402,8 +402,8 @@
 
         <div class="flex justify-end gap-3">
             <button type="button" onclick="closeModal('add-role-modal')"
-                    class="px-6 py-2.5 border border-[#1c3152] hover:border-[#2b5fad]
-                           text-[#94b1d2] rounded-xl text-sm font-medium transition-all">
+                    class="px-6 py-2.5 border border-[#1c3152] hover:border-gray-700
+                           text-[#94b1d2] hover:text-white rounded-xl text-sm font-medium transition-all">
                 Cancel
             </button>
             <button type="submit"

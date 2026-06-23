@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div>
+        <h1 class="text-white text-3xl font-bold tracking-tight mb-1">Plans</h1>
+        <p class="text-[#527195] text-sm">Manage your gym membership plan and packages</p>
+    </div>
+</div>
+
+<div class="flex items-center justify-between mb-6 gap-4">
+    <div class="relative flex-1 max-w-xs">
+        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#527195]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+        </span>
+        <input type="text" id="search-input" name="q" value="{{ search }}" placeholder="Search plans..."
+            class="w-full bg-[#1A2236] rounded-xl pl-12 pr-4 py-3 text-sm text-gray-100 placeholder-[#527195]
+                          focus:outline-none focus:ring-2 focus:ring-[#41C2EF]/50 transition-all border border-transparent">
+    </div>
+    <button onclick="openModal('add-plan-modal')" class="flex items-center gap-2 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900
+                       font-semibold px-5 py-3 rounded-2xl text-sm transition-colors shadow-[0_4px_12px_rgba(60,143,245,0.1)]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Add Plan
+        </button>
+</div>
+
+<div id="plans-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    {% include "plans/partials/_plan_cards.html" %}
+</div>
+
+
+<dialog id="add-plan-modal" class="bg-[#1A2236] text-gray-100 rounded-2xl p-8 w-full max-w-2xl
+               shadow-[0_32px_80px_rgba(0,0,0,0.5)] backdrop:bg-slate-950/80">
+
+    <div class="flex items-center justify-between mb-8">
+        <h2 class="text-white text-xl font-bold tracking-tight">Add New Plan</h2>
+        <button onclick="closeModal('add-plan-modal')" class="text-[#527195] hover:text-white transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <form method="POST" action="/plans/create" id="add-plan-form" class="space-y-6">
+        <div class="grid grid-cols-2 gap-5">
+            <div>
+                <label class="block text-gray-300 text-xs font-semibold mb-2">Plan Name<span
+                        class="text-red-400 ml-0.5">*</span></label>
+                <input type="text" name="name" required placeholder="Plan Name"
+                    class="w-full bg-[#0b182d] rounded-xl px-4 py-3 text-gray-100 placeholder-[#32455A] text-sm focus:outline-none focus:ring-1 focus:ring-[#41C2EF]">
+            </div>
+
+            <div>
+                <label class="block text-gray-300 text-xs font-semibold mb-2">Duration<span
+                        class="text-red-400 ml-0.5">*</span></label>
+                <div class="flex gap-2">
+                    <input type="text" name="duration_value" required min="1" placeholder="Duration"
+                        class="flex-1 bg-[#0b182d] rounded-xl px-4 py-3 text-gray-100 placeholder-[#32455A] text-sm focus:outline-none">
+                    <select name="duration_unit"
+                        class="bg-[#0b182d] rounded-xl px-3 py-3 text-gray-300 text-sm focus:outline-none">
+                        <option value="days" selected>Days</option>
+                        <option value="months">Months</option>
+                        <option value="years">Years</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-gray-300 text-xs font-semibold mb-2">Gender<span
+                        class="text-red-400 ml-0.5">*</span></label>
+                <select name="gender"
+                    class="w-full bg-[#0b182d] rounded-xl px-4 py-3 text-gray-300 text-sm focus:outline-none">
+                    <option value="" disabled selected>Select Gender</option>
+                    <option value="any">Any Gender</option>
+                    <option value="male">Male Only</option>
+                    <option value="female">Female Only</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-gray-300 text-xs font-semibold mb-2">Price</label>
+                <input type="text" name="price" placeholder="Add Price"
+                    class="w-full bg-[#0b182d] rounded-xl px-4 py-3 text-gray-100 placeholder-[#32455A] text-sm focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-gray-300 text-xs font-semibold mb-2">Discount</label>
+                <input type="text" name="discount_percent" placeholder="Discount"
+                    class="w-full bg-[#0b182d] rounded-xl px-4 py-3 text-gray-100 placeholder-[#32455A] text-sm focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-gray-300 text-xs font-semibold mb-2">Features</label>
+
+                <div class="flex items-center bg-[#0b182d] rounded-xl pr-3 mb-3">
+
+                    <input type="text" id="add-feature-input" placeholder="Add features"
+                        class="flex-1 bg-[#0b182d] pl-4 py-3 text-gray-100 placeholder-[#32455A] text-sm focus:outline-none w-full rounded-full">
+
+                    <button type="button" onclick="addFeature('add')"
+                        class="flex-shrink-0 bg-[#41C2EF] hover:bg-[#41C2EF]/80 text-[#0b182d] p-1 rounded-full flex items-center justify-center transition-colors">
+                        <svg class="w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+
+                </div>
+
+                <div id="add-features-tags" class="flex flex-wrap gap-3 gap-y-2 pt-2 max-w-full overflow-x-auto"></div>
+                <input type="hidden" name="features_json" id="add-features-json" value="[]">
+            </div>
+        </div>
+
+
+        <div class="flex justify-end gap-3">
+            <button type="button" onclick="closeModal('add-plan-modal')"
+                class="px-6 py-2.5 border border-[#1c3152] hover:border-gray-700 text-[#94b1d2] hover:text-white rounded-xl text-sm font-medium transition-all">
+                Cancel
+            </button>
+            <button type="submit"
+                class="px-6 py-2.5 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900 rounded-xl text-sm font-semibold transition-all shadow-[0_4px_12px_rgba(60,143,245,0.1)]">
+                Add
+            </button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="edit-plan-modal" class="bg-[#1A2236] text-gray-100 rounded-2xl p-8 w-full max-w-2xl
+               shadow-[0_32px_80px_rgba(0,0,0,0.5)] backdrop:bg-slate-950/80">
+
+    <div class="flex items-center justify-between mb-8">
+        <h2 class="text-white text-xl font-bold tracking-tight">Edit Plan</h2>
+        <button onclick="closeModal('edit-plan-modal')" class="text-[#527195] hover:text-white transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <form method="POST" id="edit-plan-form" action="" class="space-y-6">
+        <div class="grid grid-cols-2 gap-5">
+            <div>
+                <label class="block text-gray-300 text-xs font-semibold mb-2">Plan Name<span
+                        class="text-red-400 ml-0.5">*</span></label>
+                <input type="text" name="name" id="edit-plan-name" required
+                    class="w-full bg-[#0b182d] rounded-xl px-4 py-3 text-gray-100 text-sm focus:outline-none focus:ring-1 focus:ring-[#41C2EF]">
+            </div>
+
+            <div>
+                <label class="block text-gray-300 text-xs font-semibold mb-2">Duration<span
+                        class="text-red-400 ml-0.5">*</span></label>
+                <div class="flex gap-2">
+                    <input type="number" name="duration_value" id="edit-plan-duration-value" required min="1"
+                        class="flex-1 bg-[#0b182d] rounded-xl px-4 py-3 text-gray-100 text-sm focus:outline-none">
+                    <select name="duration_unit" id="edit-plan-duration-unit"
+                        class="bg-[#0b182d] rounded-xl px-3 py-3 text-gray-300 text-sm focus:outline-none">
+                        <option value="months">Months</option>
+                        <option value="days">Days</option>
+                        <option value="years">Years</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-gray-300 text-xs font-semibold mb-2">Gender<span
+                        class="text-red-400 ml-0.5">*</span></label>
+                <select name="gender" id="edit-plan-gender"
+                    class="w-full bg-[#0b182d] rounded-xl px-4 py-3 text-gray-300 text-sm focus:outline-none">
+                    <option value="any">Any Gender</option>
+                    <option value="male">Male Only</option>
+                    <option value="female">Female Only</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-gray-300 text-xs font-semibold mb-2">Price<span
+                        class="text-red-400 ml-0.5">*</span></label>
+                <input type="text" name="price" id="edit-plan-price"
+                    class="w-full bg-[#0b182d] rounded-xl px-4 py-3 text-gray-100 text-sm focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-gray-300 text-xs font-semibold mb-2">Discount</label>
+                <input type="text" name="discount_percent" id="edit-plan-discount"
+                    class="w-full bg-[#0b182d] rounded-xl px-4 py-3 text-gray-100 text-sm focus:outline-none">
+            </div>
+
+            <div>
+            <label class="block text-gray-300 text-xs font-semibold mb-2">Features</label>
+            <div class="flex items-center bg-[#0b182d] rounded-xl pr-3 mb-3">
+
+                    <input type="text" id="edit-feature-input" placeholder="Add features"
+                        class="flex-1 bg-[#0b182d] pl-4 py-3 text-gray-100 placeholder-[#32455A] text-sm focus:outline-none w-full rounded-full">
+
+                    <button type="button" onclick="addFeature('edit')"
+                        class="flex-shrink-0 bg-[#41C2EF] hover:bg-[#41C2EF]/80 text-[#0b182d] p-1 rounded-full flex items-center justify-center transition-colors">
+                        <svg class="w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+
+                </div>
+                <div id="edit-features-tags" class="flex flex-wrap gap-3 gap-y-2 pt-2 max-w-full overflow-x-auto"></div>
+
+
+            <input type="hidden" name="features_json" id="edit-features-json" value="[]">
+        </div>
+
+
+            <input type="hidden" name="is_active" id="edit-plan-status">
+
+
+        </div>
+
+
+        <div class="flex justify-end gap-3 pt-4">
+            <button type="button" onclick="closeModal('edit-plan-modal')"
+                class="px-6 py-2.5 border border-[#1c3152] hover:border-gray-700 text-[#94b1d2] hover:text-white rounded-xl text-sm font-medium transition-all">
+                Cancel
+            </button>
+            <button type="submit"
+                class="px-6 py-2.5 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900 rounded-xl text-sm font-semibold transition-all shadow-[0_4px_12px_rgba(60,143,245,0.1)]">
+                Update
+            </button>
+        </div>
+    </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openModal(id) { document.getElementById(id).showModal(); }
+    function closeModal(id) { document.getElementById(id).close(); }
+
+    document.querySelectorAll('dialog').forEach(dialog => {
+        dialog.addEventListener('click', e => {
+            const r = dialog.getBoundingClientRect();
+            if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close();
+        });
+    });
+
+    const featureState = { add: [], edit: [] };
+
+    function renderFeatureTags(prefix) {
+        const container = document.getElementById(`${prefix}-features-tags`);
+        const hidden = document.getElementById(`${prefix}-features-json`);
+        if (!container) return;
+
+        container.innerHTML = featureState[prefix].map((f, i) => `
+        <div class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm text-gray-200 font-medium">
+            <button type="button" onclick="removeFeature('${prefix}', ${i})"
+                    class="flex h-6 w-6 items-center justify-center rounded-full bg-[#1f2d45] text-[#94b1d2] hover:bg-[#2f3f5a] transition-colors">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <span class="select-none">${f}</span>
+        </div>
+    `).join('');
+
+        hidden.value = JSON.stringify(featureState[prefix]);
+    }
+
+    function addFeature(prefix) {
+        const input = document.getElementById(`${prefix}-feature-input`);
+        const val = (input.value || '').trim();
+        if (!val || featureState[prefix].includes(val)) {
+            input.value = '';
+            return;
+        }
+        featureState[prefix].push(val);
+        renderFeatureTags(prefix);
+        input.value = '';
+        input.focus();
+    }
+
+    function removeFeature(prefix, idx) {
+        featureState[prefix].splice(idx, 1);
+        renderFeatureTags(prefix);
+    }
+
+    ['add', 'edit'].forEach(prefix => {
+        const input = document.getElementById(`${prefix}-feature-input`);
+        if (input) {
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') { e.preventDefault(); addFeature(prefix); }
+            });
+        }
+    });
+
+    function openEditPlan(plan) {
+        document.getElementById('edit-plan-name').value = plan.name;
+        document.getElementById('edit-plan-price').value = plan.price;
+        document.getElementById('edit-plan-discount').value = plan.discount;
+        document.getElementById('edit-plan-gender').value = plan.gender;
+        document.getElementById('edit-plan-status').value = plan.isActive;
+        document.getElementById('edit-plan-form').action = `/plans/update/${plan.id}`;
+
+        let dval = plan.durationDays, dunit = 'days';
+        if (plan.durationDays >= 365 && plan.durationDays % 365 === 0) {
+            dval = plan.durationDays / 365; dunit = 'years';
+        } else if (plan.durationDays >= 30 && plan.durationDays % 30 === 0) {
+            dval = plan.durationDays / 30; dunit = 'months';
+        }
+        document.getElementById('edit-plan-duration-value').value = dval;
+        document.getElementById('edit-plan-duration-unit').value = dunit;
+
+        featureState['edit'] = Array.isArray(plan.features) ? [...plan.features] : [];
+        renderFeatureTags('edit');
+
+        openModal('edit-plan-modal');
+    }
+
+    async function togglePlanStatus(id, currentStatus) {
+        try {
+            const response = await fetch(`/plans/toggle-status/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                console.log('Plan status updated:', data.is_active ? 'Active' : 'Inactive');
+            } else {
+                console.error('Failed to toggle plan status:', data.error);
+            }
+        } catch (e) {
+            console.error('Status swap failed:', e);
+        }
+    }
+
+    document.getElementById('add-plan-modal').addEventListener('close', () => {
+        featureState['add'] = [];
+        renderFeatureTags('add');
+        document.getElementById('add-plan-form').reset();
+    });
+
+    let searchTimer;
+    function triggerSearch() {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(async () => {
+            const q = document.getElementById('search-input').value.trim();
+            const gender = '';
+            const status = '';
+            const params = new URLSearchParams({ q, gender, status });
+
+            try {
+                const res = await fetch(`/plans/search?${params}`);
+                const html = await res.text();
+                document.getElementById('plans-grid').innerHTML = html;
+            } catch (e) {
+                console.error('Search failed:', e);
+            }
+        }, 300);
+    }
+
+    document.getElementById('search-input').addEventListener('input', triggerSearch);
+</script>
+{% endblock %}
