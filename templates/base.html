@@ -50,7 +50,7 @@
             </button>
             <div id="members-sub" class="pl-12 pr-2 space-y-1 {% if active_page != 'members' %}hidden{% endif %}">
                 <a href="/members" class="block px-3 py-2 text-xs font-medium text-[#94b1d2] hover:text-[#41c2ef] rounded-xl transition-colors">All Members</a>
-                <a href="/members/register" class="block px-3 py-2 text-xs font-medium text-[#94b1d2] hover:text-[#41c2ef] rounded-xl transition-colors">Register Member</a>
+                <a href="/members/renewals" class="block px-3 py-2 text-xs font-medium text-[#94b1d2] hover:text-[#41c2ef] rounded-xl transition-colors">Renewal Logs</a>
             </div>
         </div>
         {% endif %}
@@ -189,7 +189,7 @@
         {% endif %}
         {% if error %}
         <div class="flash-message bg-red-500/10 border border-red-500/30 text-red-400 px-5 py-3.5 rounded-2xl text-sm flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.15)]">
-            <span class="font-medium">✕ {{ error }}</span>
+            <span class="font-medium">{{ error }}</span>
             <button onclick="this.parentElement.remove()" class="text-red-400/60 hover:text-red-400 text-xs">✕</button>
         </div>
         {% endif %}

@@ -11,27 +11,6 @@ from fastapi import HTTPException, status
 from services.supabase_client import get_supabase
 
 
-# ── ID Generator ──────────────────────────────────────────────────────────────
-
-def _next_member_id() -> str:
-    """Generate sequential member ID like M0001, M0002 …"""
-    db = get_supabase()
-    result = (
-        db.table("members")
-        .select("member_id")
-        .order("created_at", desc=True)
-        .limit(1)
-        .execute()
-    )
-    if not result.data:
-        return "M0001"
-    last = result.data[0].get("member_id", "M0000")
-    try:
-        num = int(last[1:]) + 1
-    except (ValueError, IndexError):
-        num = 1
-    return f"M{num:04d}"
-
 
 # ── Formatters ────────────────────────────────────────────────────────────────
 
@@ -88,7 +67,7 @@ def _enrich_member(m: dict) -> dict:
     m["fee_status"] = _fee_status(membership)
     m["plan_name"] = (membership or {}).get("plans", {}).get("name", "—") if membership else "—"
     m["joining_date_fmt"] = _fmt_date(m.get("joining_date"))
-    m["expiry_date_fmt"] = _fmt_date((membership or {}).get("end_date")) if membership else "—"
+    m["expiry_date_fmt"] = _fmt_date((membership or {}).get("expiry_date")) if membership else "—"
     # Health issues — ensure list
     hi = m.get("health_issues") or []
     if isinstance(hi, str):
@@ -109,9 +88,9 @@ class MemberService:
     @staticmethod
     def get_stats() -> dict:
         db = get_supabase()
-        members = db.table("members").select("is_active, gender").execute().data or []
+        members = db.table("members").select("status, gender").execute().data or []
         total  = len(members)
-        active = sum(1 for m in members if m.get("is_active"))
+        active = sum(1 for m in members if m.get("status") == "active")
         male   = sum(1 for m in members if m.get("gender") == "male")
         female = sum(1 for m in members if m.get("gender") == "female")
         return {"total": total, "active": active, "male": male, "female": female}
@@ -134,7 +113,7 @@ class MemberService:
             .select(
                 "*, "
                 "memberships!memberships_member_id_fkey("
-                "  id, plan_id, start_date, end_date, fee_paid, status,"
+                "  *,"
                 "  plans(id, name, price)"
                 ")"
             )
@@ -142,18 +121,18 @@ class MemberService:
         )
 
         if search:
-            # Search by name, member_id, or phone
+            # Search by name, cnic, or phone
             query = query.or_(
-                f"full_name.ilike.%{search}%,"
-                f"member_id.ilike.%{search}%,"
+                f"name.ilike.%{search}%,"
+                f"cnic.ilike.%{search}%,"
                 f"phone.ilike.%{search}%"
             )
         if gender and gender != "all":
             query = query.eq("gender", gender)
         if status == "active":
-            query = query.eq("is_active", True)
+            query = query.eq("status", "active")
         elif status == "inactive":
-            query = query.eq("is_active", False)
+            query = query.neq("status", "active")
 
         # Filter by active membership plan
         if plan_id and plan_id != "all":
@@ -169,16 +148,16 @@ class MemberService:
         count_result = db.table("members").select("id", count="exact")
         if search:
             count_result = count_result.or_(
-                f"full_name.ilike.%{search}%,"
-                f"member_id.ilike.%{search}%,"
+                f"name.ilike.%{search}%,"
+                f"cnic.ilike.%{search}%,"
                 f"phone.ilike.%{search}%"
             )
         if gender and gender != "all":
             count_result = count_result.eq("gender", gender)
         if status == "active":
-            count_result = count_result.eq("is_active", True)
+            count_result = count_result.eq("status", "active")
         elif status == "inactive":
-            count_result = count_result.eq("is_active", False)
+            count_result = count_result.neq("status", "active")
 
         total = count_result.execute().count or 0
         total_pages = max(1, (total + per_page - 1) // per_page)
@@ -201,7 +180,7 @@ class MemberService:
             .select(
                 "*, "
                 "memberships!memberships_member_id_fkey("
-                "  id, plan_id, start_date, end_date, fee_paid, status,"
+                "  *,"
                 "  plans(id, name, price)"
                 ")"
             )
@@ -216,10 +195,11 @@ class MemberService:
     # ── Check CNIC duplicate ──────────────────────────────────────────────────
 
     @staticmethod
-    def check_cnic(cnic: str, exclude_id: str = "") -> bool:
-        """Returns True if CNIC already exists (excluding the given member id)."""
+    def check_cnic(cnic: str, exclude_id: str = "", cnic_type: str = "member") -> bool:
+        """Returns True if a member/guardian CNIC already exists (excluding the given member id)."""
         db = get_supabase()
-        q = db.table("members").select("id").eq("cnic", cnic.strip())
+        field = "cnic" if cnic_type == "member" else "guardian_cnic"
+        q = db.table("members").select("id").eq(field, cnic.strip())
         if exclude_id:
             q = q.neq("id", exclude_id)
         result = q.execute()
@@ -231,14 +211,14 @@ class MemberService:
     def create(data: dict) -> dict:
         db = get_supabase()
 
-        # Duplicate CNIC check
-        if MemberService.check_cnic(data.get("cnic", "")):
+        # Duplicate CNIC check — map based on selected type
+        raw_cnic_input = (data.get("cnic") or "").strip()
+        cnic_type = (data.get("cnic_type") or "member").lower()
+        if raw_cnic_input and MemberService.check_cnic(raw_cnic_input, cnic_type=cnic_type):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="A member with this CNIC already exists.",
             )
-
-        member_id = _next_member_id()
 
         # Ensure health_issues is a list
         health_issues = data.get("health_issues") or []
@@ -248,29 +228,67 @@ class MemberService:
             except Exception:
                 health_issues = [health_issues] if health_issues else []
 
+        # Map CNIC input into correct DB column depending on selection
+        cnic_val = raw_cnic_input if raw_cnic_input else None
         payload = {
-            "member_id":        member_id,
-            "full_name":        (data.get("full_name") or "").strip(),
-            "father_name":      data.get("father_name") or None,
+            "name":             (data.get("full_name") or "").strip(),
+            "father_name":      (data.get("father_name") or "").strip() or None,
             "age":              data.get("age") or None,
-            "date_of_birth":    data.get("date_of_birth") or None,
-            "cnic_type":        data.get("cnic_type", "member"),
-            "cnic":             (data.get("cnic") or "").strip(),
+            "cnic":             cnic_val if cnic_type == "member" else (data.get("cnic") if data.get("cnic") else None),
+            "guardian_cnic":    cnic_val if cnic_type != "member" else (data.get("guardian_cnic") or None),
             "phone":            (data.get("phone") or "").strip(),
+            "email":            (data.get("email") or "").strip() or None,
             "gender":           data.get("gender") or None,
             "blood_group":      data.get("blood_group") or None,
-            "email":            (data.get("email") or "").strip() or None,
+            "date_of_birth":    data.get("date_of_birth") or None,
             "joining_date":     data.get("joining_date") or date.today().isoformat(),
-            "health_issues":    health_issues,
             "address":          data.get("address") or None,
-            "admission_fee":    float(data.get("admission_fee") or 0),
-            "discount_percent": float(data.get("discount_percent") or 0),
+            "emergency_contact": data.get("emergency_contact") or None,
+            # Admission fee is recorded as a payment, not stored on members table
             "photo_url":        data.get("photo_url") or None,
-            "is_active":        True,
+            "status":           "active",
+            "notes":            data.get("notes") or None,
+            "registered_by":    data.get("registered_by") or None,
         }
 
         member_result = db.table("members").insert(payload).execute()
         member = member_result.data[0]
+
+        # If an admission fee was provided, record it as a payment
+        admission_fee = data.get("admission_fee")
+        try:
+            if admission_fee is not None and str(admission_fee).strip() != "":
+                amount = float(admission_fee)
+            else:
+                amount = 0
+        except Exception:
+            amount = 0
+
+        if amount and amount > 0:
+            # Determine discount amount: explicit `discount` (amount) preferred,
+            # otherwise compute from `discount_percent` if provided.
+            discount_amount = 0
+            try:
+                discount_amount = float(data.get("discount") or 0)
+            except Exception:
+                discount_amount = 0
+            if (not discount_amount) and data.get("discount_percent") is not None and str(data.get("discount_percent")).strip() != "":
+                try:
+                    percent = float(data.get("discount_percent"))
+                    discount_amount = round(amount * percent / 100.0, 2)
+                except Exception:
+                    discount_amount = discount_amount
+
+            payment_payload = {
+                "member_id": member["id"],
+                "amount": amount,
+                "discount": discount_amount,
+                "payment_method": data.get("payment_method") or "cash",
+                "payment_date": data.get("payment_date") or date.today().isoformat(),
+                "notes": data.get("payment_notes") or "Admission fee",
+                "status": "paid",
+            }
+            db.table("payments").insert(payment_payload).execute()
 
         # Create membership if plan selected
         plan_id = data.get("plan_id")
@@ -279,8 +297,7 @@ class MemberService:
                 "member_id":  member["id"],
                 "plan_id":    plan_id,
                 "start_date": data.get("membership_start") or date.today().isoformat(),
-                "end_date":   data.get("membership_expiry") or None,
-                "fee_paid":   True,
+                "expiry_date": data.get("membership_expiry") or None,
                 "status":     "active",
             }
             db.table("memberships").insert(membership_payload).execute()
@@ -303,9 +320,10 @@ class MemberService:
     def update(member_id: str, data: dict) -> dict:
         db = get_supabase()
 
-        # CNIC duplicate check (excluding self)
-        cnic = (data.get("cnic") or "").strip()
-        if cnic and MemberService.check_cnic(cnic, exclude_id=member_id):
+        # CNIC duplicate check (excluding self) — support cnic_type mapping
+        raw_cnic_input = (data.get("cnic") or "").strip()
+        cnic_type = (data.get("cnic_type") or "member").lower()
+        if raw_cnic_input and MemberService.check_cnic(raw_cnic_input, exclude_id=member_id, cnic_type=cnic_type):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Another member with this CNIC already exists.",
@@ -319,25 +337,33 @@ class MemberService:
             except Exception:
                 health_issues = [health_issues] if health_issues else []
 
+        # Map is_active form field to status values
+        status_val = None
+        if "is_active" in data and data.get("is_active") is not None:
+            status_val = "active" if data.get("is_active") in [True, "true", "True"] else "suspended"
+        
+        # Map CNIC input into correct DB column depending on selection
+        cnic_val = raw_cnic_input if raw_cnic_input else None
         payload = {k: v for k, v in {
-            "full_name":        (data.get("full_name") or "").strip() or None,
-            "father_name":      data.get("father_name") or None,
+            "name":             (data.get("full_name") or "").strip() or None,
+            "father_name":      (data.get("father_name") or "").strip() or None,
             "age":              data.get("age") or None,
-            "date_of_birth":    data.get("date_of_birth") or None,
-            "cnic_type":        data.get("cnic_type") or None,
-            "cnic":             cnic or None,
+            "cnic":             cnic_val if cnic_type == "member" else (data.get("cnic") or None),
             "phone":            (data.get("phone") or "").strip() or None,
+            "email":            (data.get("email") or "").strip() or None,
             "gender":           data.get("gender") or None,
             "blood_group":      data.get("blood_group") or None,
-            "email":            (data.get("email") or "").strip() or None,
+            "date_of_birth":    data.get("date_of_birth") or None,
             "joining_date":     data.get("joining_date") or None,
-            "health_issues":    health_issues if health_issues is not None else None,
             "address":          data.get("address") or None,
-            "admission_fee":    float(data.get("admission_fee") or 0) if data.get("admission_fee") is not None else None,
-            "discount_percent": float(data.get("discount_percent") or 0) if data.get("discount_percent") is not None else None,
+            "emergency_contact": data.get("emergency_contact") or None,
             "photo_url":        data.get("photo_url") or None,
-            "is_active":        data.get("is_active"),
+            "status":           status_val,
+            "notes":            data.get("notes") or None,
+            "guardian_cnic":    cnic_val if cnic_type != "member" else (data.get("guardian_cnic") or None),
         }.items() if v is not None}
+        # Always write health_issues (even empty list) — not filtered by the None check above
+        payload["health_issues"] = health_issues
 
         result = (
             db.table("members")
@@ -362,8 +388,7 @@ class MemberService:
             membership_payload = {
                 "plan_id":    plan_id,
                 "start_date": data.get("membership_start") or date.today().isoformat(),
-                "end_date":   data.get("membership_expiry") or None,
-                "fee_paid":   True,
+                "expiry_date": data.get("membership_expiry") or None,
                 "status":     "active",
             }
             if existing.data:
@@ -391,11 +416,12 @@ class MemberService:
     # ── Toggle Active ─────────────────────────────────────────────────────────
 
     @staticmethod
-    def toggle_active(member_id: str) -> bool:
+    def toggle_active(member_id: str) -> str:
         db = get_supabase()
         member = MemberService.get_by_id(member_id)
-        new_status = not member.get("is_active", True)
-        db.table("members").update({"is_active": new_status}).eq("id", member_id).execute()
+        current_status = member.get("status", "active")
+        new_status = "suspended" if current_status == "active" else "active"
+        db.table("members").update({"status": new_status}).eq("id", member_id).execute()
         return new_status
 
     # ── Delete Member ─────────────────────────────────────────────────────────
@@ -515,7 +541,7 @@ class MemberService:
         current = active[0] if active else None
         if current:
             current["price_fmt"] = _pkr((current.get("plans") or {}).get("price", 0))
-            current["end_date_fmt"] = _fmt_date(current.get("end_date"))
+            current["end_date_fmt"] = _fmt_date(current.get("expiry_date"))
 
         # History (past + all)
         history = (
@@ -527,7 +553,7 @@ class MemberService:
         ).data or []
         for h in history:
             h["start_date_fmt"] = _fmt_date(h.get("start_date"))
-            h["end_date_fmt"] = _fmt_date(h.get("end_date"))
+            h["end_date_fmt"] = _fmt_date(h.get("expiry_date"))
             h["plan_name"] = (h.get("plans") or {}).get("name", "—")
 
         return {"current": current, "history": history}

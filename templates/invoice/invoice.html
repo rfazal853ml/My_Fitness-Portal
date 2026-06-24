@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt — {{ member.id }} | {{ gym_name }}</title>
+    <style>
+        /* ── Reset ─────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ── Page ──────────────────────────────────────────────── */
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f4f6f9;
+            color: #1a2236;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .invoice-wrapper {
+            background: #fff;
+            width: 100%;
+            max-width: 680px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+        }
+
+        /* ── Header ─────────────────────────────────────────────── */
+        .inv-header {
+            background: linear-gradient(135deg, #0d1b2e 0%, #1a2f4e 100%);
+            padding: 2rem 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .inv-brand { display: flex; align-items: center; gap: 0.75rem; }
+        .inv-logo  { width: 44px; height: 44px; object-fit: contain; }
+        .inv-brand-name {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+        .inv-brand-name span { color: #41c2ef; }
+
+        .inv-badge {
+            text-align: right;
+        }
+        .inv-badge p:first-child {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: #41c2ef;
+            margin-bottom: 0.2rem;
+        }
+        .inv-badge p:last-child {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* ── Status bar ─────────────────────────────────────────── */
+        .inv-status-bar {
+            background: #41c2ef;
+            padding: 0.5rem 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .inv-status-bar span {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #0d1b2e;
+        }
+
+        /* ── Body ───────────────────────────────────────────────── */
+        .inv-body { padding: 2rem 2.5rem; }
+
+        /* ── Section labels ──────────────────────────────────────── */
+        .section-label {
+            font-size: 0.6rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #94b1d2;
+            border-bottom: 1px solid #e8edf5;
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.75rem;
+        }
+
+        /* ── Two-col info rows ───────────────────────────────────── */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.75rem;
+        }
+        .info-item label {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #94b1d2;
+            margin-bottom: 0.2rem;
+        }
+        .info-item p {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #1a2236;
+        }
+        .info-item p.accent { color: #41c2ef; font-family: 'Courier New', monospace; }
+
+        /* ── Amount table ────────────────────────────────────────── */
+        .amount-table { width: 100%; border-collapse: collapse; margin-bottom: 1.75rem; }
+        .amount-table thead tr {
+            background: #f4f6f9;
+        }
+        .amount-table th {
+            padding: 0.6rem 0.75rem;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #527195;
+            text-align: left;
+        }
+        .amount-table th:last-child { text-align: right; }
+        .amount-table td {
+            padding: 0.75rem;
+            font-size: 0.85rem;
+            color: #1a2236;
+            border-bottom: 1px solid #e8edf5;
+        }
+        .amount-table td:last-child { text-align: right; font-weight: 600; }
+        .amount-table .discount-row td { color: #22c55e; font-size: 0.8rem; }
+        .amount-table .total-row td {
+            border-bottom: none;
+            border-top: 2px solid #0d1b2e;
+            padding-top: 0.85rem;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: #0d1b2e;
+        }
+
+        /* ── Footer ─────────────────────────────────────────────── */
+        .inv-footer {
+            background: #f4f6f9;
+            padding: 1.25rem 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .inv-footer p {
+            font-size: 0.72rem;
+            color: #94b1d2;
+            max-width: 340px;
+        }
+        .inv-footer p strong { color: #527195; }
+
+        .signature-box {
+            text-align: center;
+            min-width: 140px;
+        }
+        .signature-box .sig-line {
+            border-bottom: 1.5px solid #c0cfe3;
+            margin-bottom: 0.4rem;
+            height: 40px;
+        }
+        .signature-box p {
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #94b1d2;
+        }
+
+        /* ── Print action bar ────────────────────────────────────── */
+        .print-bar {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0d1b2e;
+            border-radius: 50px;
+            padding: 0.6rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+            z-index: 100;
+        }
+        .print-bar p {
+            font-size: 0.8rem;
+            color: #94b1d2;
+        }
+        .btn-print {
+            background: #41c2ef;
+            color: #0d1b2e;
+            border: none;
+            border-radius: 50px;
+            padding: 0.45rem 1.2rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-print:hover { background: #30b0de; }
+
+        /* ── Watermark for paid ───────────────────────────────────── */
+        .paid-stamp {
+            display: inline-block;
+            border: 3px solid #22c55e;
+            color: #22c55e;
+            border-radius: 8px;
+            padding: 0.15rem 0.6rem;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            vertical-align: middle;
+            margin-left: 0.5rem;
+        }
+        .unpaid-stamp {
+            display: inline-block;
+            border: 3px solid #ef4444;
+            color: #ef4444;
+            border-radius: 8px;
+            padding: 0.15rem 0.6rem;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            vertical-align: middle;
+            margin-left: 0.5rem;
+        }
+
+        /* ── Print media ─────────────────────────────────────────── */
+        @media print {
+            body { background: #fff; padding: 0; }
+            .invoice-wrapper { box-shadow: none; border-radius: 0; max-width: 100%; }
+            .print-bar { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="invoice-wrapper">
+
+    <!-- Header -->
+    <div class="inv-header">
+        <div class="inv-brand">
+            <img src="/static/images/logo.png" alt="Logo" class="inv-logo">
+            <span class="inv-brand-name">{{ gym_name }}</span>
+        </div>
+        <div class="inv-badge">
+            <p>Payment Receipt</p>
+            <p>
+                {% if payment and payment.receipt_id %}
+                    {{ payment.receipt_id }}
+                {% elif payment %}
+                    RCP-{{ payment.id[:8].upper() }}
+                {% else %}
+                    RCP-——
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="inv-status-bar">
+        <span>Official Receipt — Keep for your records</span>
+        <span>
+            {% if payment %}
+                {{ payment.date_fmt or '' }}
+            {% else %}
+                {{ member.joining_date_fmt or '' }}
+            {% endif %}
+        </span>
+    </div>
+
+    <!-- Body -->
+    <div class="inv-body">
+
+        <!-- Member info -->
+        <p class="section-label">Member Information</p>
+        <div class="info-grid">
+            <div class="info-item">
+                <label>Member ID</label>
+                <p class="accent">{{ member.id }}</p>
+            </div>
+            <div class="info-item">
+                <label>Full Name</label>
+                <p>{{ member.name }}</p>
+            </div>
+            <div class="info-item">
+                <label>Phone</label>
+                <p>{{ member.phone or '—' }}</p>
+            </div>
+            <div class="info-item">
+                <label>CNIC</label>
+                <p>{{ member.cnic or '—' }}</p>
+            </div>
+            <div class="info-item">
+                <label>Joining Date</label>
+                <p>{{ member.joining_date_fmt or '—' }}</p>
+            </div>
+            <div class="info-item">
+                <label>Membership Expiry</label>
+                <p>{{ member.expiry_date_fmt or '—' }}</p>
+            </div>
+        </div>
+
+        <!-- Payment breakdown -->
+        <p class="section-label">Payment Details</p>
+        <table class="amount-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Plan</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if payment %}
+                <tr>
+                    <td>Membership Fee</td>
+                    <td>{{ (payment.plans.name if payment.plans else member.plan_name) | capitalize }}</td>
+                    <td>{{ payment.payment_method | capitalize if payment.payment_method else 'Cash' }}</td>
+                    <td>{{ payment.amount_fmt }}</td>
+                </tr>
+                {% if member.admission_fee and member.admission_fee > 0 %}
+                <tr>
+                    <td>Admission Fee (one-time)</td>
+                    <td>—</td>
+                    <td>Cash</td>
+                    <td>PKR {{ '{:,.0f}'.format(member.admission_fee) }}</td>
+                </tr>
+                {% endif %}
+                {% if member.discount_percent and member.discount_percent > 0 %}
+                <tr class="discount-row">
+                    <td colspan="3">Discount Applied ({{ member.discount_percent | int }}%)</td>
+                    <td>— Applied</td>
+                </tr>
+                {% endif %}
+                <tr class="total-row">
+                    <td colspan="3">
+                        Total Paid
+                        {% if payment.payment_method %}
+                        <span class="paid-stamp">Paid</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ payment.amount_fmt }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" style="color:#94b1d2; text-align:center; padding:1.5rem;">
+                        No payment record found for this member.
+                    </td>
+                    <td></td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Plan info -->
+        <p class="section-label">Membership Period</p>
+        <div class="info-grid">
+            <div class="info-item">
+                <label>Plan</label>
+                <p>{{ member.plan_name | capitalize }}</p>
+            </div>
+            <div class="info-item">
+                <label>Status</label>
+                <p>
+                    {% if member.fee_status == 'paid' %}
+                        <span class="paid-stamp">Active / Paid</span>
+                    {% elif member.fee_status == 'expired' %}
+                        <span class="unpaid-stamp">Expired</span>
+                    {% else %}
+                        <span class="unpaid-stamp">Unpaid</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+    </div><!-- /inv-body -->
+
+    <!-- Footer -->
+    <div class="inv-footer">
+        <p>
+            Thank you for choosing <strong>{{ gym_name }}</strong>.
+            This is an official payment receipt. Please retain it for your records.
+            For queries, contact the gym reception.
+        </p>
+        <div class="signature-box">
+            <div class="sig-line"></div>
+            <p>Authorized Signature</p>
+        </div>
+    </div>
+
+</div><!-- /invoice-wrapper -->
+
+<!-- Print action bar (hidden on print) -->
+<div class="print-bar">
+    <p>Press <strong>Ctrl+P</strong> or click the button to save as PDF</p>
+    <button class="btn-print" onclick="window.print()">🖨 Print / Save PDF</button>
+    <button class="btn-print" style="background:#1a2f4e; color:#94b1d2;" onclick="window.close()">✕ Close</button>
+</div>
+
+</body>
+</html>

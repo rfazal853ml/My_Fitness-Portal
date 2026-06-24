@@ -2,28 +2,6 @@
 
 {% block content %}
 
-{# ── Stats Row ──────────────────────────────────────────────────────────── #}
-<div class="grid grid-cols-4 gap-4 mb-6">
-  {% for label, value in [
-      ('Total Members', stats.total),
-      ('Active',        stats.active),
-      ('Male',          stats.male),
-      ('Female',        stats.female),
-  ] %}
-  <div class="bg-[#1A2236] rounded-2xl p-5 flex items-center gap-4 shadow-[0_22px_50px_rgba(6,15,32,0.30)]">
-    <div class="w-12 h-12 rounded-xl bg-[#41C2EF] flex items-center justify-center flex-shrink-0">
-      <svg class="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-      </svg>
-    </div>
-    <div class="min-w-0 border-l border-[#122a44] pl-4">
-      <p class="text-[#94b1d2] text-xs font-semibold uppercase tracking-wider mb-0.5">{{ label }}</p>
-      <p class="text-white text-2xl font-bold tracking-tight">{{ value }}</p>
-    </div>
-  </div>
-  {% endfor %}
-</div>
 
 {# ── Filters + Add Button ───────────────────────────────────────────────── #}
 <div class="flex items-center gap-3 mb-6 flex-wrap">
@@ -36,8 +14,9 @@
     </span>
     <input id="search-input" type="text" value="{{ search }}"
            placeholder="Search by name, ID, phone..."
-           class="w-full bg-[#1A2236] rounded-2xl pl-11 pr-4 py-3 text-sm text-gray-100
-                  placeholder-[#527195] focus:outline-none focus:ring-1 focus:ring-[#41C2EF]/50 transition-all">
+           class="w-full bg-[#1A2236] rounded-2xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]
+                      pl-12 pr-4 py-3 text-sm text-gray-100 placeholder-[#527195]
+                      focus:outline-none focus:border-gray-700 transition-colors">
   </div>
 
   {# Plan filter #}
@@ -80,7 +59,7 @@
   <div class="overflow-x-auto">
     <table class="w-full border-separate border-spacing-0">
       <thead>
-        <tr class="bg-[#0b182d]">
+        <tr class="bg-[#0B0F1A]">
           <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">ID</th>
           <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Member</th>
           <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Phone</th>
@@ -88,6 +67,7 @@
           <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Joining Date</th>
           <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Expiry Date</th>
           <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Fee Status</th>
+          <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Invoice</th>
           <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Status</th>
           <th class="text-right text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-[#122645]">Action</th>
         </tr>
@@ -113,7 +93,7 @@
   <div class="flex items-center justify-between px-6 py-4 border-t border-[#122645]">
     <span class="text-xs text-[#94b1d2]">Showing {{ members | length }} of {{ total }} members</span>
     <div class="flex items-center gap-2">
-      <button id="prev-btn" onclick="changePage({{ page - 1 }})"
+      <button onclick="changePage({{ page - 1 }})"
               class="px-4 py-2 rounded-xl text-sm font-medium border border-[#1c3152] text-[#94b1d2]
                      hover:text-white hover:bg-[#11213c] transition-colors
                      {% if page <= 1 %}opacity-40 cursor-not-allowed{% endif %}"
@@ -127,7 +107,7 @@
         {{ p }}
       </button>
       {% endfor %}
-      <button id="next-btn" onclick="changePage({{ page + 1 }})"
+      <button onclick="changePage({{ page + 1 }})"
               class="px-4 py-2 rounded-xl text-sm font-medium border border-[#1c3152] text-[#94b1d2]
                      hover:text-white hover:bg-[#11213c] transition-colors
                      {% if page >= total_pages %}opacity-40 cursor-not-allowed{% endif %}"
@@ -141,11 +121,11 @@
 
 
 {# ════════════════════════════════════════════════════════════════════════════
-   CNIC VERIFICATION MODAL (shown first when clicking Add Member)
+   CNIC VERIFICATION MODAL
    ════════════════════════════════════════════════════════════════════════════ #}
 <dialog id="cnic-verify-modal"
-        class="bg-[#1A2236] rounded-2xl p-8 w-full max-w-lg shadow-[0_32px_80px_rgba(1,10,26,0.5)] backdrop:bg-black/70">
-  <div class="flex items-center justify-between mb-6">
+        class="bg-[#1A2236]  rounded-2xl p-8 w-full max-w-2xl shadow-[0_32px_80px_rgba(1,10,26,0.40)] backdrop:bg-black/70">
+  <div class="flex items-center justify-between mb-6 border-b border-gray-700 pb-4">
     <h2 class="text-white text-xl font-bold">Member Identity Verification</h2>
     <button onclick="closeModal('cnic-verify-modal')" class="text-[#94b1d2] hover:text-white">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,13 +139,11 @@
       <label class="block text-[#94b1d2] text-sm font-medium mb-3">CNIC Type <span class="text-red-400">*</span></label>
       <div class="space-y-3">
         <label class="flex items-center gap-3 cursor-pointer">
-          <input type="radio" name="verify_cnic_type" value="member" checked
-                 class="w-4 h-4 accent-[#41c2ef]">
+          <input type="radio" name="verify_cnic_type" value="member" checked class="w-4 h-4 accent-[#41c2ef]">
           <span class="text-white text-sm">Member's CNIC (18+)</span>
         </label>
         <label class="flex items-center gap-3 cursor-pointer">
-          <input type="radio" name="verify_cnic_type" value="guardian"
-                 class="w-4 h-4 accent-[#41c2ef]">
+          <input type="radio" name="verify_cnic_type" value="guardian" class="w-4 h-4 accent-[#41c2ef]">
           <span class="text-white text-sm">Guardian's CNIC (For members under 18)</span>
         </label>
       </div>
@@ -174,26 +152,26 @@
     <div>
       <label class="block text-[#94b1d2] text-sm font-medium mb-2">CNIC <span class="text-red-400">*</span></label>
       <input id="verify-cnic-input" type="text" placeholder="Enter CNIC number"
-             class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
-                    text-gray-100 placeholder-[#527195] text-sm focus:outline-none focus:border-[#41c2ef] transition-colors">
+             class="w-full bg-[#0B0F1A] border border-gray-700 rounded-xl px-4 py-3
+                    text-gray-100 placeholder-[#527195] text-sm focus:outline-none focus:border-gray-00 transition-colors">
       <p id="cnic-verify-error" class="text-red-400 text-xs mt-2 hidden"></p>
-      <p class="text-[#527195] text-xs mt-2 flex items-center gap-1">
-        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+      <p class="text-[#527195] text-xs mt-2 mb-2 flex items-center gap-1 border-b border-gray-700 pb-4">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
         </svg>
-        Guardian's CNIC (For members under 18)
+        Guardian's CNIC used for members under 18 years of age.
       </p>
     </div>
   </div>
 
   <div class="flex gap-3 mt-8">
     <button onclick="closeModal('cnic-verify-modal')"
-            class="flex-1 border border-[#1c3152] text-[#94b1d2] hover:text-white hover:bg-[#11213c]
+            class="flex-1 border border-gray-700 text-[#94b1d2] hover:text-white hover:bg-[#11213c]
                    py-3 rounded-xl text-sm font-medium transition-colors">
       Cancel
     </button>
     <button onclick="proceedToAddMember()"
-            class="flex-1 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900
+            class="flex-1 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900 hover:text-white
                    font-bold py-3 rounded-xl text-sm transition-colors">
       Continue
     </button>
@@ -202,99 +180,104 @@
 
 
 {# ════════════════════════════════════════════════════════════════════════════
-   ADD / EDIT MEMBER MODAL (large, scrollable)
+   ADD / EDIT MEMBER MODAL — large, scrollable
    ════════════════════════════════════════════════════════════════════════════ #}
 <dialog id="member-modal"
-        class="bg-[#1A2236] rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto
-               shadow-[0_32px_80px_rgba(1,10,26,0.5)] backdrop:bg-black/70">
-  <div class="sticky top-0 bg-[#1A2236] z-10 flex items-center justify-between px-8 pt-8 pb-4 border-b border-[#122645]">
-    <h2 id="modal-title" class="text-white text-xl font-bold">Add Member</h2>
-    <button onclick="closeModal('member-modal')" class="text-[#94b1d2] hover:text-white">
+        class="bg-[#1A2236] w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-[0_40px_120px_rgba(0,0,0,0.65)] backdrop:bg-black/70">
+  <div class="bg-[#1A2236] rounded-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="sticky top-0 z-10 flex items-center justify-between px-10 pt-8 pb-4 border-b border-gray-700">
+      <div>
+        <p class="text-[#41c2ef] uppercase tracking-[0.18em] text-xs font-semibold mb-2">Add Member</p>
+        <h2 id="modal-title" class="text-white text-3xl font-bold">New Member Details</h2>
+      </div>
+      <button onclick="closeModal('member-modal')" class="text-[#94b1d2] hover:text-white">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
       </svg>
     </button>
   </div>
 
-  <form id="member-form" method="POST" action="/members/create" enctype="multipart/form-data" class="px-8 pb-8 pt-6 space-y-8">
+  <form id="member-form" method="POST" action="/members/create" enctype="multipart/form-data" class="px-6 pb-8 overflow-y-auto max-h-[calc(90vh-140px)] space-y-8">
     <input type="hidden" id="form-member-id" name="_member_id" value="">
 
     {# ── Personal Information ── #}
-    <section>
-      <h3 class="text-white font-bold text-base mb-5">Personal Information</h3>
-      <div class="grid grid-cols-2 gap-4">
+    <section class="border-b border-gray-700 pl-4 pb-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+      <h3 class="text-white font-bold text-xl mb-6">Personal Information</h3>
+      <div class="grid grid-cols-2 gap-5">
 
         <div>
-          <label class="field-label">Full Name <span class="text-red-400">*</span></label>
-          <input type="text" name="full_name" id="f-full_name" required placeholder="Enter full name" class="field-input">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Full Name <span class="text-red-400">*</span></label>
+          <input type="text" name="full_name" id="f-full_name" required placeholder="Enter full name" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors" value="">
         </div>
+        
         <div>
-          <label class="field-label">Father's Name <span class="text-red-400">*</span></label>
-          <input type="text" name="father_name" id="f-father_name" placeholder="Enter father name" class="field-input">
-        </div>
-
-        <div>
-          <label class="field-label">Age <span class="text-red-400">*</span></label>
-          <input type="number" name="age" id="f-age" min="1" max="120" placeholder="Enter your age" class="field-input">
-        </div>
-        <div>
-          <label class="field-label">Date of Birth</label>
-          <input type="date" name="date_of_birth" id="f-date_of_birth" class="field-input">
-        </div>
-
-        <div class="col-span-2">
-          <label class="field-label">CNIC Type <span class="text-red-400">*</span></label>
-          <div class="flex gap-6 mt-1">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" name="cnic_type" id="cnic-type-member" value="member" checked class="accent-[#41c2ef]">
-              <span class="text-white text-sm">Member's CNIC (18+)</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" name="cnic_type" id="cnic-type-guardian" value="guardian" class="accent-[#41c2ef]">
-              <span class="text-white text-sm">Guardian's CNIC (For members under 18)</span>
-            </label>
-          </div>
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Father's Name <span class="text-red-400">*</span></label>
+          <input type="text" name="father_name" id="f-father_name" required placeholder="Enter father name" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
         </div>
 
         <div>
-          <label class="field-label">CNIC <span class="text-red-400">*</span></label>
-          <input type="text" name="cnic" id="f-cnic" required placeholder="Enter CNIC number" class="field-input">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Age <span class="text-red-400">*</span></label>
+          <input type="text" name="age" id="f-age" min="1" max="120" required placeholder="Enter your age" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
         </div>
+        
         <div>
-          <label class="field-label">Phone Number <span class="text-red-400">*</span></label>
-          <input type="text" name="phone" id="f-phone" required placeholder="Enter phone number" class="field-input">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Date of Birth</label>
+          <input type="date" name="date_of_birth" id="f-date_of_birth" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
+        </div>
+
+
+        <div id="cnic-member-block" class="field-locked">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2 flex items-center gap-2">
+            Member CNIC <span class="text-red-400 add-only-asterisk">*</span>
+          </label>
+          <input type="text" name="cnic" id="f-cnic" required placeholder="Enter member CNIC" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none transition-colors">
+        </div>
+
+        <div id="cnic-guardian-block" class="hidden field-locked">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2 flex items-center gap-2">
+            Guardian CNIC <span class="text-red-400 add-only-asterisk">*</span>
+          </label>
+          <input type="text" name="guardian_cnic" id="f-guardian_cnic" placeholder="Enter guardian CNIC" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none transition-colors">
         </div>
 
         <div>
-          <label class="field-label">Gender</label>
-          <select name="gender" id="f-gender" class="field-input">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Phone Number <span class="text-red-400">*</span></label>
+          <input type="text" name="phone" id="f-phone" required placeholder="Enter phone number" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
+        </div>
+
+        <div>
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Gender</label>
+          <select name="gender" id="f-gender" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
             <option value="">Select gender</option>
             <option value="male">Male</option>
             <option value="female">Female</option>
             <option value="other">Other</option>
           </select>
         </div>
+        
         <div>
-          <label class="field-label">Blood Group</label>
-          <input type="text" name="blood_group" id="f-blood_group" placeholder="Enter blood group" class="field-input">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Blood Group</label>
+          <input type="text" name="blood_group" id="f-blood_group" placeholder="e.g. O+" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
         </div>
 
         <div>
-          <label class="field-label">Email (Optional)</label>
-          <input type="email" name="email" id="f-email" placeholder="Enter your email" class="field-input">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Email (Optional)</label>
+          <input type="email" name="email" id="f-email" placeholder="Enter your email" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
         </div>
-        <div>
-          <label class="field-label">Joining Date</label>
-          <input type="date" name="joining_date" id="f-joining_date" class="field-input">
+        <div class="field-locked" id="lock-joining-date">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2 flex items-center gap-2">
+            Joining Date
+          </label>
+          <input type="date" name="joining_date" id="f-joining_date" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
         </div>
 
         <div>
-          <label class="field-label">Health Issues</label>
-          <div class="flex items-center bg-[#0b182d] border border-[#1c3152] rounded-xl pr-3">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Health Issues</label>
+          <div class="flex items-center bg-[#0B0F1A] border border-[#1c3152] rounded-xl pr-3">
             <input type="text" id="hi-input" placeholder="Health Issues"
                    class="flex-1 bg-transparent pl-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none">
             <button type="button" onclick="addHealthIssue()"
-                    class="flex-shrink-0 bg-[#41C2EF] text-gray-900 p-1 rounded-full">
+                    class="hi-add-btn flex-shrink-0 bg-[#41C2EF] text-gray-900 p-1 rounded-full">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/>
               </svg>
@@ -304,57 +287,104 @@
           <input type="hidden" name="health_issues_json" id="hi-json" value="[]">
         </div>
         <div>
-          <label class="field-label">Address</label>
-          <input type="text" name="address" id="f-address" placeholder="Enter your address" class="field-input">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Address</label>
+          <input type="text" name="address" id="f-address" placeholder="Enter your address" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
         </div>
 
-        <div>
-          <label class="field-label">Admission Fee</label>
-          <select name="admission_fee" id="f-admission_fee" class="field-input">
-            <option value="0">0</option>
-            <option value="1000">1,000</option>
-            <option value="2000">2,000</option>
-            <option value="3000">3,000</option>
-            <option value="5000">5,000</option>
-          </select>
+        <div class="field-locked" id="lock-admission-fee">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2 flex items-center gap-2">
+            Admission Fee
+          </label>
+          <input type="text" name="admission_fee" id="f-admission_fee" min="0" placeholder="Enter admission fee" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
         </div>
         <div>
-          <label class="field-label">Discount</label>
-          <select name="discount_percent" id="f-discount_percent" class="field-input">
-            <option value="0">0%</option>
-            <option value="5">5%</option>
-            <option value="10">10%</option>
-            <option value="15">15%</option>
-            <option value="20">20%</option>
-            <option value="25">25%</option>
-            <option value="50">50%</option>
-          </select>
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Discount</label>
+          <input type="text" name="discount_percent" id="f-discount_percent" min="0" max="100" placeholder="Enter discount percentage" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
         </div>
 
         <div class="col-span-2">
-          <label class="field-label">Profile Photo</label>
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Profile Photo</label>
           <input type="file" name="photo" accept="image/*"
-                 class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-2
-                        text-gray-100 text-sm focus:outline-none focus:border-[#41c2ef] transition-colors">
+                 class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-2
+                        text-gray-100 text-sm focus:outline-none  transition-colors">
         </div>
 
       </div>
     </section>
 
+    {# ── Bio-metric Enrolment ── #}
+    <section class=" border-b border-gray-700 pl-4 pb-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+      <h3 class="text-white font-bold text-xl mb-6">Bio-metric Enrolment</h3>
+      <div class="grid grid-cols-2 gap-4">
+
+        {# Fingerprint #}
+        <button type="button" onclick="enrollFingerprint()"
+                id="fingerprint-btn"
+                class="flex items-center gap-3 border border-gray-700 rounded-xl px-5 py-4 transition-all group text-left">
+          <div class="w-9 h-9 rounded-lg bg-[#122d4f] flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-[#41c2ef]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p id="fingerprint-label" class="text-white text-sm font-semibold">Add Fingerprint</p>
+            <p class="text-[#527195] text-xs mt-0.5">Scan on ZKTeco device</p>
+          </div>
+          <span id="fingerprint-check"
+                class="hidden w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+            </svg>
+          </span>
+        </button>
+
+        {# Capture Face #}
+        <button type="button" onclick="captureface()"
+                id="face-btn"
+                class="flex items-center gap-3 border border-gray-700 rounded-xl px-5 py-4 transition-all group text-left">
+          <div class="w-9 h-9 rounded-lg bg-[#122d4f] flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-[#41c2ef]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p class="text-white text-sm font-semibold">Capture Face</p>
+            <p class="text-[#527195] text-xs mt-0.5">ZKTeco face recognition</p>
+          </div>
+          <span id="face-check"
+                class="hidden w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+            </svg>
+          </span>
+        </button>
+
+      </div>
+      <p class="text-[#527195] text-xs mt-3 flex items-center gap-1.5">
+        <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+        Biometric enrollment requires a connected ZKTeco device. You can skip and enroll later.
+      </p>
+    </section>
+
     {# ── Membership Plan ── #}
-    <section>
-      <h3 class="text-white font-bold text-base mb-5">Membership Plan</h3>
+    <section id="plan-section" class="border-b border-gray-700 pl-4 pb-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-white font-bold text-xl">Membership Plan</h3>
+      </div>
       <div class="grid grid-cols-3 gap-4 mb-5" id="plan-cards">
         {% for p in plans %}
         <div onclick="selectPlan('{{ p.id }}', '{{ p.name }}', {{ p.price }}, {{ p.duration_days }})"
              data-plan-id="{{ p.id }}"
-             class="plan-card cursor-pointer border border-[#1c3152] rounded-2xl p-5 text-center
-                    hover:border-[#41c2ef] transition-all">
+             class="plan-card cursor-pointer border border-gray-700 rounded-2xl p-5 text-center transition-all">
           <p class="text-white font-semibold text-base capitalize mb-1">{{ p.name }}</p>
           <p class="text-[#41c2ef] font-black text-2xl mb-4">{{ p.price_display }}</p>
           <button type="button"
                   class="plan-btn w-full py-2 rounded-xl text-sm font-bold transition-colors
-                         bg-[#0b182d] text-[#94b1d2] border border-[#1c3152] hover:bg-[#41c2ef] hover:text-gray-900">
+                         bg-[#41c2ef] text-[#0B0F1A] border border-[#1c3152] hover:bg-[#41c2ef]/90 hover:text-white">
             Choose Plan
           </button>
         </div>
@@ -364,9 +394,8 @@
 
       <div class="grid grid-cols-3 gap-4">
         <div>
-          <label class="field-label">Duration</label>
-          <select name="_duration_preset" id="f-duration-preset" onchange="applyDuration()"
-                  class="field-input">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Duration</label>
+          <select name="_duration_preset" id="f-duration-preset" onchange="applyDuration()" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors">
             <option value="">Select</option>
             <option value="30">1 Month</option>
             <option value="90">3 Months</option>
@@ -376,56 +405,55 @@
           </select>
         </div>
         <div>
-          <label class="field-label">Start Date <span class="text-red-400">*</span></label>
-          <input type="date" name="membership_start" id="f-membership_start" class="field-input"
-                 onchange="calcExpiry()">
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Start Date <span class="text-red-400">*</span></label>
+          <input type="date" name="membership_start" id="f-membership_start" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors" onchange="calcExpiry()">
         </div>
         <div>
-          <label class="field-label">Expiry Date</label>
-          <input type="date" name="membership_expiry" id="f-membership_expiry" class="field-input" readonly>
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Expiry Date</label>
+          <input type="date" name="membership_expiry" id="f-membership_expiry" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none  transition-colors" readonly>
         </div>
       </div>
     </section>
+
 
     {# ── Payment Summary ── #}
-    <section>
-      <h3 class="text-white font-bold text-base mb-4">Payment</h3>
+    <section class=" border-b border-gray-700 pl-4 pb-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+      <h3 class="text-white font-bold text-xl mb-4">Payment</h3>
       <div id="payment-card"
            class="hidden rounded-2xl p-5 bg-gradient-to-br from-[#0d2a4a] to-[#091828] border border-[#1c3152]">
-        <span id="pay-plan-badge"
-              class="text-xs font-bold uppercase bg-[#0b182d] px-3 py-1 rounded-full text-[#41c2ef] mb-3 inline-block"></span>
-        <p id="pay-amount" class="text-white text-3xl font-black mb-1"></p>
-        <p id="pay-admission" class="text-[#94b1d2] text-sm"></p>
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <span id="pay-plan-badge"
+                  class="text-xs font-bold uppercase bg-[#0B0F1A] px-3 py-1 rounded-full text-[#41c2ef] mb-3 inline-block"></span>
+            <div class="flex items-baseline gap-2 flex-wrap mt-1">
+              <span id="pay-amount" class="text-white text-3xl font-black tracking-tight"></span>
+              <span id="pay-original-price"
+                    class="text-[#527195] text-sm line-through decoration-gray-700 font-semibold hidden"></span>
+              <span id="pay-discount-badge"
+                    class="text-red-400 text-xs font-bold px-2 py-0.5 bg-red-400/10 hidden"></span>
+            </div>
+            <p id="pay-admission" class="text-[#94b1d2] text-sm mt-2"></p>
+          </div>
+          <div id="pay-savings-block" class="hidden text-right flex-shrink-0">
+            <p class="text-green-400 text-xs font-bold uppercase tracking-wider">saved</p>
+            <p id="pay-savings" class="text-green-400 text-sm font-black"></p>
+          </div>
+        </div>
+      </div>
+      <div id="payment-card-empty"
+           class="rounded-2xl p-5 border border-dashed border-[#1c3152] text-center text-[#527195] text-sm">
+        Select a membership plan above to see the payment summary.
       </div>
     </section>
 
-    {# ── Notes ── #}
-    <section>
-      <h3 class="text-white font-bold text-base mb-4">Notes</h3>
-      <div class="space-y-3">
-        <div>
-          <label class="field-label">Title</label>
-          <input type="text" name="note_title" id="f-note_title" placeholder="Add title" class="field-input">
-        </div>
-        <div>
-          <label class="field-label">Description</label>
-          <textarea name="note_description" id="f-note_description" rows="3"
-                    placeholder="Enter description"
-                    class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
-                           text-gray-100 placeholder-[#527195] text-sm focus:outline-none
-                           focus:border-[#41c2ef] transition-colors resize-none"></textarea>
-        </div>
-      </div>
-    </section>
-
-    <div class="flex justify-end gap-3 pt-2 border-t border-[#122645]">
+    <div class="flex justify-end gap-3 pt-2 pb-2 border-t border-[#122645]">
       <button type="button" onclick="closeModal('member-modal')"
               class="px-6 py-2.5 border border-[#1c3152] text-[#94b1d2] hover:text-white
                      hover:bg-[#11213c] rounded-xl text-sm font-medium transition-colors">
         Cancel
       </button>
       <button type="submit" id="modal-submit-btn"
-              class="px-6 py-2.5 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900
+              class="px-6 py-2.5 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900 hover:text-white
                      rounded-xl text-sm font-semibold transition-colors">
         Add
       </button>
@@ -435,18 +463,17 @@
 
 
 {# ════════════════════════════════════════════════════════════════════════════
-   MEMBER PROFILE MODAL (view-only, tabbed)
+   MEMBER PROFILE MODAL — tabbed
    ════════════════════════════════════════════════════════════════════════════ #}
 <dialog id="profile-modal"
         class="bg-[#1A2236] rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto
                shadow-[0_32px_80px_rgba(1,10,26,0.5)] backdrop:bg-black/70">
   <div class="sticky top-0 bg-[#1A2236] z-10 px-8 pt-8 pb-0 border-b border-[#122645]">
-    {# Header #}
     <div class="flex items-start justify-between mb-6">
       <div class="flex items-center gap-4">
         <div id="p-avatar"
              class="w-16 h-16 rounded-full bg-[#122d4f] border-2 border-[#41c2ef]
-                    flex items-center justify-center text-[#41c2ef] text-xl font-bold flex-shrink-0">
+                    flex items-center justify-center text-[#41c2ef] text-xl font-bold flex-shrink-0 overflow-hidden">
           AR
         </div>
         <div>
@@ -454,22 +481,22 @@
           <p  id="p-phone" class="text-[#94b1d2] text-sm mt-0.5">—</p>
           <p  id="p-email" class="text-[#94b1d2] text-xs">—</p>
           <div class="flex items-center gap-2 mt-2">
-            <span id="p-plan-badge"  class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#0b182d] border border-[#1c3152] text-[#94b1d2]">—</span>
+            <span id="p-plan-badge"  class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#0B0F1A] border border-[#1c3152] text-[#94b1d2]">—</span>
             <span id="p-bio-badge"   class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 hidden">⊙ Biometric</span>
-            <span id="p-gender-age"  class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#0b182d] border border-[#1c3152] text-[#94b1d2]">—</span>
+            <span id="p-gender-age"  class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#0B0F1A] border border-[#1c3152] text-[#94b1d2]">—</span>
           </div>
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div class="text-center bg-[#0b182d] border border-[#1c3152] rounded-2xl px-5 py-3 min-w-[80px]">
+        <div class="text-center bg-[#0B0F1A] border border-[#1c3152] rounded-2xl px-5 py-3 min-w-[80px]">
           <p id="p-days" class="text-white text-2xl font-black">—</p>
           <p class="text-[#94b1d2] text-xs mt-0.5">Days Active</p>
         </div>
-        <div class="text-center bg-[#0b182d] border border-[#1c3152] rounded-2xl px-5 py-3 min-w-[80px]">
+        <div class="text-center bg-[#0B0F1A] border border-[#1c3152] rounded-2xl px-5 py-3 min-w-[80px]">
           <p id="p-rate" class="text-white text-2xl font-black">—</p>
           <p class="text-[#94b1d2] text-xs mt-0.5">Attendance</p>
         </div>
-        <div class="text-center bg-[#0b182d] border border-[#1c3152] rounded-2xl px-5 py-3 min-w-[80px]">
+        <div class="text-center bg-[#0B0F1A] border border-[#1c3152] rounded-2xl px-5 py-3 min-w-[80px]">
           <p id="p-fee-status" class="text-2xl font-black text-green-400">—</p>
           <p class="text-[#94b1d2] text-xs mt-0.5">Fee status</p>
         </div>
@@ -498,17 +525,96 @@
   </div>
 </dialog>
 
+
+{# ════════════════════════════════════════════════════════════════════════════
+   BIOMETRIC MODAL — placeholder until ZKTeco phase
+   ════════════════════════════════════════════════════════════════════════════ #}
+<dialog id="biometric-modal"
+        class="bg-[#1A2236] rounded-2xl p-8 w-full max-w-md shadow-[0_32px_80px_rgba(1,10,26,0.5)] backdrop:bg-black/70">
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-white text-xl font-bold">Biometric Enrollment</h2>
+    <button onclick="closeModal('biometric-modal')" class="text-[#94b1d2] hover:text-white">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="text-center py-4">
+    <div class="w-20 h-20 rounded-full bg-[#0B0F1A] border-2 border-[#41c2ef]/30 flex items-center justify-center mx-auto mb-4">
+      <svg class="w-10 h-10 text-[#41c2ef]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/>
+      </svg>
+    </div>
+    <p id="bio-modal-name" class="text-white text-lg font-bold mb-1">Member Name</p>
+    <p class="text-[#94b1d2] text-sm mb-6">Biometric enrollment is managed through the ZKTeco device integration.</p>
+
+    <div class="bg-[#0B0F1A] border border-[#1c3152] rounded-xl p-4 text-left space-y-2">
+      <p class="text-xs font-bold text-[#94b1d2] uppercase tracking-wider mb-3">Enrollment Status</p>
+      <div class="flex items-center justify-between text-sm">
+        <span class="text-white">Fingerprint</span>
+        <span class="text-[#527195] font-medium">Not Enrolled</span>
+      </div>
+      <div class="flex items-center justify-between text-sm">
+        <span class="text-white">Face Recognition</span>
+        <span class="text-[#527195] font-medium">Not Enrolled</span>
+      </div>
+    </div>
+
+    <p class="text-[#527195] text-xs mt-4">
+      Connect a ZKTeco device to enable enrollment. This feature is part of Phase 2.
+    </p>
+  </div>
+
+  <button onclick="closeModal('biometric-modal')"
+          class="w-full mt-6 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900
+                 font-bold py-3 rounded-xl text-sm transition-colors">
+    Close
+  </button>
+</dialog>
+
 {% endblock %}
 
 
 {% block scripts %}
+
 <style>
-.field-label  { @apply block text-[#94b1d2] text-sm font-medium mb-2; }
-.field-input  { @apply w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 placeholder-[#527195] text-sm focus:outline-none focus:border-[#41c2ef] transition-colors; }
-.plan-card.selected  { border-color: #41c2ef; background: #0d2d4a; }
-.plan-card.selected .plan-btn { background: #41c2ef; color: #111827; }
-.profile-tab.active  { border-color: #41c2ef; color: #fff; }
-</style>
+  #member-form {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(65, 194, 239, 0.6) #0b172d;
+  }
+
+  #member-form::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  #member-form::-webkit-scrollbar-track {
+    background: #0b172d;
+    border-radius: 9999px;
+  }
+
+  #member-form::-webkit-scrollbar-thumb {
+    background: rgba(65, 194, 239, 0.35);
+    border-radius: 9999px;
+    border: 2px solid #0b172d;
+  }
+
+  #member-form::-webkit-scrollbar-thumb:hover {
+    background: rgba(65, 194, 239, 0.55);
+  }
+
+  /* ── Locked fields: visible but not editable in edit mode ── */
+  .field-locked input,
+  .field-locked select,
+  .field-locked textarea {
+    opacity: 0.45;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+  .field-locked .hi-add-btn { display: none; }
+  .lock-badge { display: none; }
+  .field-locked .lock-badge { display: inline-flex; }</style>
 
 <script>
 // ─── Global state ─────────────────────────────────────────────────────────────
@@ -527,6 +633,31 @@ document.querySelectorAll('dialog').forEach(d => {
   });
 });
 
+// ─── Biometric Modal ──────────────────────────────────────────────────────────
+function openBiometricModal(memberId, memberName) {
+  document.getElementById('bio-modal-name').textContent = memberName || 'Member';
+  document.getElementById('biometric-modal').showModal();
+}
+
+// ─── Biometric placeholder handlers ──────────────────────────────────────────
+function enrollFingerprint() {
+  const label = document.getElementById('fingerprint-label');
+  const check = document.getElementById('fingerprint-check');
+  // Placeholder — real implementation uses ZKTeco SDK
+  label.textContent = 'Fingerprint Added';
+  check.classList.remove('hidden');
+  check.classList.add('flex');
+  document.getElementById('fingerprint-btn').classList.add('border-green-500/50');
+}
+
+function captureface() {
+  const check = document.getElementById('face-check');
+  // Placeholder — real implementation uses ZKTeco face capture
+  check.classList.remove('hidden');
+  check.classList.add('flex');
+  document.getElementById('face-btn').classList.add('border-green-500/50');
+}
+
 // ─── Add Member flow ──────────────────────────────────────────────────────────
 function openAddMember() {
   document.getElementById('verify-cnic-input').value = '';
@@ -535,88 +666,249 @@ function openAddMember() {
 }
 
 async function proceedToAddMember() {
-  const cnic = document.getElementById('verify-cnic-input').value.trim();
+  const cnic  = document.getElementById('verify-cnic-input').value.trim();
   const errEl = document.getElementById('cnic-verify-error');
   errEl.classList.add('hidden');
-  if (!cnic) { errEl.textContent = 'Please enter a CNIC number.'; errEl.classList.remove('hidden'); return; }
+  if (!cnic) {
+    errEl.textContent = 'Please enter a CNIC number.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!validateCnicValue(cnic)) {
+    errEl.textContent = 'CNIC must be exactly 13 digits.';
+    errEl.classList.remove('hidden');
+    return;
+  }
 
+  const cnicType = document.querySelector('input[name="verify_cnic_type"]:checked')?.value || 'member';
   try {
-    const res  = await fetch(`/members/check-cnic?cnic=${encodeURIComponent(cnic)}`);
+    const res  = await fetch(`/members/check-cnic?cnic=${encodeURIComponent(cnic)}&cnic_type=${encodeURIComponent(cnicType)}`);
     const data = await res.json();
     if (data.exists) {
-      errEl.textContent = 'A member with this CNIC already exists.';
+      errEl.textContent = cnicType === 'guardian'
+        ? 'A guardian with this CNIC is already registered.'
+        : 'A member with this CNIC already exists.';
       errEl.classList.remove('hidden');
       return;
     }
-  } catch(e) { /* ignore network errors */ }
+  } catch(e) { /* ignore */ }
 
-  const cnicType = document.querySelector('input[name="verify_cnic_type"]:checked')?.value || 'member';
   closeModal('cnic-verify-modal');
   openMemberModal();
-  document.getElementById('f-cnic').value = cnic;
   const radio = document.getElementById(cnicType === 'guardian' ? 'cnic-type-guardian' : 'cnic-type-member');
   if (radio) radio.checked = true;
+  setCnicTypeControls(cnicType);
+  updateCnicFields(cnic, cnicType);
+}
+
+function validateCnicValue(value) {
+  return /^\d{13}$/.test(value);
+}
+
+function updateCnicFields(value, type) {
+  const cnicInput = document.getElementById('f-cnic');
+  const guardianInput = document.getElementById('f-guardian_cnic');
+  if (type === 'guardian') {
+    cnicInput.value = '';
+    guardianInput.value = value;
+  } else {
+    guardianInput.value = '';
+    cnicInput.value = value;
+  }
+}
+
+function setCnicTypeControls(type) {
+  const memberBlock = document.getElementById('cnic-member-block');
+  const guardianBlock = document.getElementById('cnic-guardian-block');
+  const cnicInput = document.getElementById('f-cnic');
+  const guardianInput = document.getElementById('f-guardian_cnic');
+  if (type === 'guardian') {
+    memberBlock.classList.add('hidden');
+    guardianBlock.classList.remove('hidden');
+    cnicInput.required = false;
+    guardianInput.required = true;
+  } else {
+    memberBlock.classList.remove('hidden');
+    guardianBlock.classList.add('hidden');
+    cnicInput.required = true;
+    guardianInput.required = false;
+  }
+}
+
+function validateCnicValue(value) {
+  return /^\d{13}$/.test(value);
+}
+
+function updateCnicFields(value, type) {
+  const cnicInput = document.getElementById('f-cnic');
+  const guardianInput = document.getElementById('f-guardian_cnic');
+  if (type === 'guardian') {
+    cnicInput.value = '';
+    guardianInput.value = value;
+  } else {
+    cnicInput.value = value;
+    guardianInput.value = '';
+  }
+}
+
+function syncAgeToDob() {
+  const ageEl = document.getElementById('f-age');
+  const dobEl = document.getElementById('f-date_of_birth');
+  const age = parseInt(ageEl.value, 10);
+  if (!Number.isInteger(age) || age <= 0 || age > 120) {
+    return;
+  }
+  const today = new Date();
+  const dob = new Date(today);
+  dob.setFullYear(dob.getFullYear() - age);
+  dobEl.value = dob.toISOString().slice(0, 10);
+}
+
+function syncDobToAge() {
+  const ageEl = document.getElementById('f-age');
+  const dobEl = document.getElementById('f-date_of_birth');
+  const dob = new Date(dobEl.value);
+  if (!(dob instanceof Date) || isNaN(dob)) {
+    return;
+  }
+  const today = new Date();
+  if (dob > today) {
+    ageEl.value = '';
+    return;
+  }
+  let age = today.getFullYear() - dob.getFullYear();
+  if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) {
+    age -= 1;
+  }
+  ageEl.value = age >= 0 ? age : '';
 }
 
 function openMemberModal(member = null) {
-  const form = document.getElementById('member-form');
-  const title = document.getElementById('modal-title');
-  const submitBtn = document.getElementById('modal-submit-btn');
+  const form       = document.getElementById('member-form');
+  const title      = document.getElementById('modal-title');
+  const submitBtn  = document.getElementById('modal-submit-btn');
+  const isEdit     = !!member;
 
-  // Reset
+  // ── Full reset ────────────────────────────────────────────────────────────
   form.reset();
   hiTags = [];
   renderHiTags();
-  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+
+  // Deselect all plan cards
+  document.querySelectorAll('.plan-card').forEach(c => {
+    c.classList.remove('border-[#41c2ef]', 'bg-[#0d2d4a]');
+    c.classList.add('border-gray-700');
+    const btn = c.querySelector('.plan-btn');
+    if (btn) {
+      btn.textContent = 'Choose Plan';
+      btn.classList.remove('bg-[#0B0F1A]', 'text-[#94b1d2]');
+      btn.classList.add('bg-[#41c2ef]', 'text-[#0B0F1A]');
+    }
+  });
+
   document.getElementById('payment-card').classList.add('hidden');
+  document.getElementById('payment-card-empty').classList.remove('hidden');
   document.getElementById('f-plan_id').value = '';
   document.getElementById('form-member-id').value = '';
 
+  // Reset biometric section
+  document.getElementById('fingerprint-label').textContent = 'Add Fingerprint';
+  document.getElementById('fingerprint-check').classList.add('hidden');
+  document.getElementById('fingerprint-btn').classList.remove('border-green-500/50');
+  document.getElementById('face-check').classList.add('hidden');
+  document.getElementById('face-btn').classList.remove('border-green-500/50');
+
+  // ── Apply locked / unlocked state ────────────────────────────────────────
+  // Fields locked in edit: CNIC, joining date, admission fee
+  const lockTargets = ['lock-cnic-type', 'cnic-member-block', 'cnic-guardian-block',
+                       'lock-joining-date', 'lock-admission-fee'];
+  lockTargets.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (isEdit) {
+      el.classList.add('field-locked');
+      // Remove required from locked inputs so form can still submit
+      el.querySelectorAll('input[required]').forEach(i => i.removeAttribute('required'));
+    } else {
+      el.classList.remove('field-locked');
+      // Restore required on CNIC for add mode
+      if (id === 'cnic-member-block') document.getElementById('f-cnic').setAttribute('required', '');
+    }
+  });
+
+  // Plan section: locked in edit, interactive in add
+  const planSection = document.getElementById('plan-section');
+  if (isEdit) {
+    planSection.classList.add('plans-locked');
+  } else {
+    planSection.classList.remove('plans-locked');
+  }
+
+  // Modal header label
+  const headerLabel = document.querySelector('#member-modal .sticky p');
+  if (headerLabel) headerLabel.textContent = isEdit ? 'Edit Member' : 'Add Member';
+
   if (member) {
-    title.textContent = 'Edit Member';
+    title.textContent     = 'Edit Member';
     submitBtn.textContent = 'Update';
-    form.action = `/members/update/${member.id}`;
+    form.action           = `/members/update/${member.id}`;
     document.getElementById('form-member-id').value = member.id;
 
-    // Fill fields
-    ['full_name','father_name','age','phone','blood_group','email','address'].forEach(f => {
-      const el = document.getElementById(`f-${f}`);
-      if (el) el.value = member[f] || '';
+    // ── Editable fields ───────────────────────────────────────────────────
+    const fieldMap = {
+      full_name:        'name',
+      father_name:      'father_name',
+      age:              'age',
+      phone:            'phone',
+      gender:           'gender',
+      email:            'email',
+      address:          'address',
+      blood_group:      'blood_group',
+    };
+    Object.entries(fieldMap).forEach(([fieldId, memberKey]) => {
+      const el = document.getElementById(`f-${fieldId}`);
+      if (el) el.value = member[memberKey] ?? '';
     });
     if (member.date_of_birth) document.getElementById('f-date_of_birth').value = member.date_of_birth.slice(0,10);
-    if (member.joining_date)  document.getElementById('f-joining_date').value  = member.joining_date.slice(0,10);
-    if (member.gender) document.getElementById('f-gender').value = member.gender;
-    if (member.discount_percent) document.getElementById('f-discount_percent').value = member.discount_percent;
-    if (member.admission_fee)    document.getElementById('f-admission_fee').value    = member.admission_fee;
-    const cnicRadio = document.getElementById(member.cnic_type === 'guardian' ? 'cnic-type-guardian' : 'cnic-type-member');
-    if (cnicRadio) cnicRadio.checked = true;
-    document.getElementById('f-cnic').value = member.cnic || '';
 
-    // Health issues
+    // ── Locked fields (populate for display only) ─────────────────────────
+    if (member.joining_date) document.getElementById('f-joining_date').value = member.joining_date.slice(0,10);
+
+    // ── CNIC (display only in edit) ────────────────────────────────────────
+    const cnicType = member.cnic_type === 'guardian' ? 'guardian' : 'member';
+    const cnicRadio = document.getElementById(
+      cnicType === 'guardian' ? 'cnic-type-guardian' : 'cnic-type-member'
+    );
+    if (cnicRadio) { cnicRadio.checked = true; setCnicTypeControls(cnicType); }
+    if (cnicType === 'guardian') {
+      document.getElementById('f-cnic').value          = '';
+      document.getElementById('f-guardian_cnic').value = member.guardian_cnic || '';
+    } else {
+      document.getElementById('f-cnic').value          = member.cnic || '';
+      document.getElementById('f-guardian_cnic').value = '';
+    }
+
+    // ── Health issues ──────────────────────────────────────────────────────
     hiTags = Array.isArray(member.health_issues) ? [...member.health_issues] : [];
     renderHiTags();
 
-    // Active membership
+    // ── Membership (display only in edit) ─────────────────────────────────
     const ms = member.membership;
-    if (ms) {
-      const planId = ms.plan_id;
-      document.getElementById('f-plan_id').value = planId || '';
-      if (ms.start_date) document.getElementById('f-membership_start').value = ms.start_date.slice(0,10);
-      if (ms.end_date)   document.getElementById('f-membership_expiry').value = ms.end_date.slice(0,10);
-      // Highlight active plan card
-      document.querySelectorAll('.plan-card').forEach(c => {
-        if (c.dataset.planId === planId) {
-          c.classList.add('selected');
-          const btn = c.querySelector('.plan-btn');
-          if (btn) btn.textContent = '✓ Current Plan';
-        }
-      });
+    if (ms && ms.plan_id) {
+      document.getElementById('f-plan_id').value = ms.plan_id;
+      if (ms.start_date)  document.getElementById('f-membership_start').value  = ms.start_date.slice(0,10);
+      if (ms.expiry_date) document.getElementById('f-membership_expiry').value = ms.expiry_date.slice(0,10);
+      const planCard = document.querySelector(`.plan-card[data-plan-id="${ms.plan_id}"]`);
+      if (planCard) {
+        const d = planCard.dataset;
+        selectPlan(d.planId, d.planName, parseFloat(d.planPrice) || 0, parseInt(d.planDays) || 0);
+      }
     }
+
   } else {
-    title.textContent = 'Add Member';
+    title.textContent     = 'New Member Details';
     submitBtn.textContent = 'Add';
-    form.action = '/members/create';
-    // Set today as default joining date
+    form.action           = '/members/create';
     document.getElementById('f-joining_date').value = new Date().toISOString().slice(0,10);
   }
 
@@ -626,7 +918,7 @@ function openMemberModal(member = null) {
 // ─── Health Issues ────────────────────────────────────────────────────────────
 function addHealthIssue() {
   const input = document.getElementById('hi-input');
-  const val = input.value.trim();
+  const val   = input.value.trim();
   if (!val || hiTags.includes(val)) { input.value = ''; return; }
   hiTags.push(val);
   renderHiTags();
@@ -639,7 +931,7 @@ function renderHiTags() {
   const container = document.getElementById('hi-tags');
   const hidden    = document.getElementById('hi-json');
   container.innerHTML = hiTags.map((t, i) => `
-    <span class="inline-flex items-center gap-1 bg-[#0b182d] border border-[#1c3152] text-gray-300
+    <span class="inline-flex items-center gap-1 bg-[#0B0F1A] border border-[#1c3152] text-gray-300
                  text-xs font-medium rounded-lg px-3 py-1.5">
       ${t}
       <button type="button" onclick="removeHI(${i})"
@@ -652,31 +944,79 @@ document.getElementById('hi-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); addHealthIssue(); }
 });
 
+const ageInput = document.getElementById('f-age');
+const dobInput = document.getElementById('f-date_of_birth');
+const memberCnicRadios = document.querySelectorAll('input[name="cnic_type"]');
+if (ageInput) ageInput.addEventListener('input', syncAgeToDob);
+if (dobInput) dobInput.addEventListener('change', syncDobToAge);
+memberCnicRadios.forEach(radio => {
+  radio.addEventListener('change', () => {
+    setCnicTypeControls(radio.value);
+    const value = radio.value === 'guardian'
+      ? document.getElementById('f-guardian_cnic').value.trim()
+      : document.getElementById('f-cnic').value.trim();
+    updateCnicFields(value, radio.value);
+  });
+});
+setCnicTypeControls('member');
+
 // ─── Plan selection ───────────────────────────────────────────────────────────
 function selectPlan(id, name, price, days) {
   document.querySelectorAll('.plan-card').forEach(c => {
     c.classList.remove('selected');
+    c.classList.remove('border-[#41c2ef]', 'bg-[#0d2d4a]');
     const btn = c.querySelector('.plan-btn');
-    if (btn) btn.textContent = 'Choose Plan';
+    if (btn) {
+      btn.textContent = 'Choose Plan';
+      btn.classList.remove('bg-[#41c2ef]', 'text-gray-900');
+      btn.classList.add('bg-[#0B0F1A]', 'text-[#94b1d2]');
+    }
   });
   const card = document.querySelector(`.plan-card[data-plan-id="${id}"]`);
   if (card) {
     card.classList.add('selected');
+    card.classList.add('border-[#41c2ef]', 'bg-[#0d2d4a]');
     const btn = card.querySelector('.plan-btn');
-    if (btn) btn.textContent = '✓ Current Plan';
+    if (btn) {
+      btn.textContent = '✓ Current Plan';
+      btn.classList.remove('bg-[#0B0F1A]', 'text-[#94b1d2]');
+      btn.classList.add('bg-[#41c2ef]', 'text-gray-900');
+    }
   }
   document.getElementById('f-plan_id').value = id;
   selectedPlanDays = days;
 
-  // Payment card
-  const disc  = parseFloat(document.getElementById('f-discount_percent').value) || 0;
-  const admFee = parseFloat(document.getElementById('f-admission_fee').value) || 0;
+  const disc    = parseFloat(document.getElementById('f-discount_percent').value) || 0;
+  const admFee  = parseFloat(document.getElementById('f-admission_fee').value) || 0;
   const discounted = price * (1 - disc / 100);
-  const payCard = document.getElementById('payment-card');
-  payCard.classList.remove('hidden');
-  document.getElementById('pay-plan-badge').textContent  = `${name} Membership`;
-  document.getElementById('pay-amount').textContent      = `PKR ${discounted.toLocaleString()} ${disc > 0 ? disc + '% off' : ''}`;
-  document.getElementById('pay-admission').textContent   = admFee > 0 ? `Admission Fee — PKR ${admFee.toLocaleString()} (One-Time)` : '';
+
+  document.getElementById('payment-card').classList.remove('hidden');
+  document.getElementById('payment-card-empty').classList.add('hidden');
+  document.getElementById('pay-plan-badge').textContent = `${name} Membership`;
+
+  // Discounted (final) price
+  document.getElementById('pay-amount').textContent = `PKR ${discounted.toLocaleString()}`;
+
+  // Original price strike-through + discount badge
+  const origEl    = document.getElementById('pay-original-price');
+  const badgeEl   = document.getElementById('pay-discount-badge');
+  const savingsEl = document.getElementById('pay-savings');
+  const savingsBlock = document.getElementById('pay-savings-block');
+  if (disc > 0) {
+    origEl.textContent   = `PKR ${price.toLocaleString()}`;
+    origEl.classList.remove('hidden');
+    badgeEl.textContent  = `-${Math.round(disc)}%`;
+    badgeEl.classList.remove('hidden');
+    const saved = price - discounted;
+    savingsEl.textContent = `PKR ${saved.toLocaleString()}`;
+    savingsBlock.classList.remove('hidden');
+  } else {
+    origEl.classList.add('hidden');
+    badgeEl.classList.add('hidden');
+    savingsBlock.classList.add('hidden');
+  }
+
+  document.getElementById('pay-admission').textContent = admFee > 0 ? `+ Admission Fee: PKR ${admFee.toLocaleString()} (One-Time)` : '';
 
   calcExpiry();
 }
@@ -737,44 +1077,61 @@ async function toggleMemberStatus(id) {
 // ─── Profile Modal ────────────────────────────────────────────────────────────
 async function openProfile(memberId) {
   currentProfileId = memberId;
-  document.getElementById('profile-modal').showModal();
-  // Reset tabs
-  document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-  const firstTab = document.querySelector('.profile-tab[data-tab="personal_info"]');
-  if (firstTab) firstTab.classList.add('active');
 
-  // Load summary
+  // Reset header to loading state before showing
+  ['p-name','p-phone','p-email'].forEach(id => document.getElementById(id).textContent = '—');
+  document.getElementById('p-days').textContent = '—';
+  document.getElementById('p-rate').textContent = '—';
+  document.getElementById('p-fee-status').textContent = '—';
+  document.getElementById('p-avatar').textContent = '…';
+  document.getElementById('p-plan-badge').textContent = '—';
+  document.getElementById('p-gender-age').textContent = '—';
+
+  document.getElementById('profile-modal').showModal();
+  switchTab('personal_info');   // this already calls loadTab — do NOT call it again below
+
   try {
     const r = await fetch(`/members/profile/${memberId}`);
     const d = await r.json();
     const m = d.member;
-    document.getElementById('p-name').textContent  = m.full_name || '—';
+
+    document.getElementById('p-name').textContent  = m.name  || '—';
     document.getElementById('p-phone').textContent = m.phone || '—';
     document.getElementById('p-email').textContent = m.email || '—';
-    document.getElementById('p-days').textContent  = d.days_active || '0';
-    document.getElementById('p-rate').textContent  = (d.attendance_rate || 0) + '%';
-    const fs = m.fee_status || 'unpaid';
+    document.getElementById('p-days').textContent  = d.days_active ?? '0';
+    document.getElementById('p-rate').textContent  = (d.attendance_rate ?? 0) + '%';
+
+    const fs   = m.fee_status || 'unpaid';
     const fsEl = document.getElementById('p-fee-status');
     fsEl.textContent = fs.charAt(0).toUpperCase() + fs.slice(1);
-    fsEl.className = `text-2xl font-black ${fs === 'paid' ? 'text-green-400' : fs === 'expired' ? 'text-orange-400' : 'text-red-400'}`;
-    // Avatar initials
-    const initials = (m.full_name || 'M').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+    fsEl.className   = `text-2xl font-black ${
+      fs === 'paid' ? 'text-green-400' : fs === 'expired' ? 'text-orange-400' : 'text-red-400'
+    }`;
+
     const avatarEl = document.getElementById('p-avatar');
     if (m.photo_url) {
-      avatarEl.innerHTML = `<img src="${m.photo_url}" class="w-full h-full object-cover rounded-full">`;
+      avatarEl.innerHTML = `<img src="${m.photo_url}" class="w-full h-full object-cover">`;
     } else {
+      const initials = (m.name || 'M').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
       avatarEl.textContent = initials;
     }
-    document.getElementById('p-plan-badge').textContent  = m.plan_name || '—';
-    document.getElementById('p-gender-age').textContent  = [m.gender ? m.gender.charAt(0).toUpperCase() + m.gender.slice(1) : '', m.age ? m.age + ' Yrs' : ''].filter(Boolean).join(' ');
-  } catch(e) { console.error(e); }
 
-  loadTab('personal_info');
+    document.getElementById('p-plan-badge').textContent = m.plan_name || '—';
+    document.getElementById('p-gender-age').textContent =
+      [m.gender ? m.gender.charAt(0).toUpperCase() + m.gender.slice(1) : '',
+       m.age    ? m.age + ' Yrs' : '']
+        .filter(Boolean).join(' ');
+  } catch(e) { console.error('Profile header load failed:', e); }
 }
 
 function switchTab(tab) {
   document.querySelectorAll('.profile-tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.tab === tab);
+    const isActive = t.dataset.tab === tab;
+    // Toggle active style — also restore border-transparent on inactive tabs
+    t.classList.toggle('border-[#41c2ef]', isActive);
+    t.classList.toggle('border-transparent', !isActive);
+    t.classList.toggle('text-white',     isActive);
+    t.classList.toggle('text-[#94b1d2]', !isActive);
   });
   loadTab(tab);
 }
@@ -789,21 +1146,21 @@ async function loadTab(tab) {
       const d = await r.json();
       const m = d.member;
       const fi = (label, val) => `
-        <div class="bg-[#0b182d] border border-[#1c3152] rounded-xl p-4">
+        <div class="bg-[#0B0F1A] border border-[#1c3152] rounded-xl p-4">
           <p class="text-[#527195] text-xs font-medium mb-1">${label}</p>
           <p class="text-white text-sm font-semibold">${val || '—'}</p>
         </div>`;
       content.innerHTML = `
         <div class="grid grid-cols-2 gap-3 mb-4">
-          ${fi('Full Name', m.full_name)}
-          ${fi('Member ID', `<span class="text-[#41c2ef]">${m.member_id}</span>`)}
+          ${fi('Full Name', m.name)}
+          ${fi('Member ID', `<span class="text-[#41c2ef] font-mono">${m.id}</span>`)}
           ${fi('Phone Number', m.phone)}
           ${fi('Email', m.email)}
           ${fi('Date of Birth', m.date_of_birth ? m.date_of_birth.slice(0,10) : '')}
           ${fi('Gender', m.gender ? m.gender.charAt(0).toUpperCase() + m.gender.slice(1) : '')}
           ${fi('Address', m.address)}
           ${fi('Age', m.age)}
-          ${fi('Member\'s Guardian CNIC', m.cnic)}
+          ${fi("Member's / Guardian CNIC", m.cnic)}
           ${fi('Joining Date', m.joining_date_fmt)}
           ${fi('Admission Fee', m.admission_fee ? 'PKR ' + Number(m.admission_fee).toLocaleString() : '')}
           ${fi('Discount', m.discount_percent ? m.discount_percent + '%' : '0%')}
@@ -821,42 +1178,55 @@ async function loadTab(tab) {
     try {
       const d = await (await fetch(`/members/profile/${currentProfileId}/attendance`)).json();
       const stat = (label, val) => `
-        <div class="bg-[#0b182d] border border-[#1c3152] rounded-2xl p-5 text-center">
+        <div class="bg-[#0B0F1A] border border-[#1c3152] rounded-2xl p-5 text-center">
           <p class="text-white text-3xl font-black mb-1">${val}</p>
           <p class="text-[#94b1d2] text-xs">${label}</p>
         </div>`;
+
       const presentSet = new Set(d.present_dates || []);
-      // Build 12-week heatmap starting from 12 weeks ago
-      const today = new Date();
-      const start = new Date(today);
-      start.setDate(start.getDate() - 83); // 12 weeks back
-      // Align to Sunday
-      start.setDate(start.getDate() - start.getDay());
+      let weeksToShow  = 12;
 
-      let weeks = [];
-      for (let w = 0; w < 12; w++) {
-        let days = [];
-        for (let day = 0; day < 7; day++) {
-          const d2 = new Date(start);
-          d2.setDate(start.getDate() + w * 7 + day);
-          const iso = d2.toISOString().slice(0,10);
-          const label = d2.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
-          const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d2.getDay()];
-          days.push({ iso, label, dow, present: presentSet.has(iso) });
+      function buildHeatmap(weeks) {
+        const today  = new Date();
+        const start  = new Date(today);
+        start.setDate(start.getDate() - (weeks * 7 - 1));
+        start.setDate(start.getDate() - start.getDay()); // align to Sunday
+
+        let cols = [];
+        for (let w = 0; w < weeks; w++) {
+          let days = [];
+          for (let day = 0; day < 7; day++) {
+            const d2  = new Date(start);
+            d2.setDate(start.getDate() + w * 7 + day);
+            const iso = d2.toISOString().slice(0,10);
+            const dd  = String(d2.getDate()).padStart(2,'0');
+            const mon = d2.toLocaleString('en-GB', { month: 'short' });
+            const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d2.getDay()];
+            days.push({ iso, dd, mon, dow, present: presentSet.has(iso) });
+          }
+          cols.push(days);
         }
-        weeks.push(days);
-      }
 
-      const heatmapHTML = weeks.map(week => `
-        <div class="flex flex-col gap-1">
-          ${week.map(day => `
-            <div class="w-9 h-9 rounded-lg flex flex-col items-center justify-center text-center cursor-default
-                        ${day.present ? 'bg-[#41c2ef] text-gray-900' : 'bg-[#0b182d] border border-[#122645] text-[#527195]'}"
-                 title="${day.present ? 'Present' : 'Absent'}: ${day.label} (${day.dow})">
-              <span class="text-[9px] font-bold leading-none">${day.label.split(' ')[0]}</span>
-              <span class="text-[8px] leading-none opacity-70">${day.label.split(' ')[1]}</span>
-            </div>`).join('')}
-        </div>`).join('');
+        return cols.map(week => `
+          <div class="flex flex-col gap-1">
+            ${week.map(day => `
+              <div class="w-10 h-10 rounded-lg flex flex-col items-center justify-center
+                          cursor-default select-none relative group
+                          ${day.present
+                              ? 'bg-[#41c2ef] text-gray-900'
+                              : 'bg-[#0B0F1A] border border-[#122645] text-[#527195]'}">
+                <span class="text-[9px] font-bold leading-none">${day.dd} ${day.mon}</span>
+                <span class="text-[8px] leading-none mt-0.5 opacity-70">${day.dow}</span>
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5
+                            hidden group-hover:flex items-center gap-1
+                            bg-white text-gray-900 text-xs font-semibold
+                            rounded-lg px-2 py-1 shadow-lg whitespace-nowrap z-10">
+                  <span class="w-2 h-2 rounded-full ${day.present ? 'bg-green-500' : 'bg-gray-300'}"></span>
+                  ${day.present ? 'Present' : 'Absent'}: ${day.dow} ${day.dd}/${day.mon}
+                </div>
+              </div>`).join('')}
+          </div>`).join('');
+      }
 
       content.innerHTML = `
         <div class="grid grid-cols-3 gap-4 mb-6">
@@ -867,16 +1237,28 @@ async function loadTab(tab) {
         <div class="border-t border-[#122645] pt-5">
           <div class="flex items-center justify-between mb-4">
             <p class="text-xs uppercase tracking-[0.2em] text-[#527195] font-bold">Attendance Heatmap</p>
-            <span class="text-[#94b1d2] text-xs">Last 12 weeks</span>
+            <select id="heatmap-weeks-select"
+                    class="bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-3 py-1.5
+                           text-xs text-gray-300 focus:outline-none">
+              <option value="4">Last 4 Weeks</option>
+              <option value="8">Last 8 Weeks</option>
+              <option value="12" selected>Last 12 Weeks</option>
+            </select>
           </div>
-          <div class="flex gap-1 overflow-x-auto pb-2">${heatmapHTML}</div>
+          <div id="heatmap-grid" class="flex gap-1 overflow-x-auto pb-2">${buildHeatmap(12)}</div>
           <div class="flex items-center gap-3 mt-3">
+            <div class="w-5 h-5 rounded bg-[#41c2ef]"></div>
             <span class="text-[#94b1d2] text-xs">Present</span>
-            <div class="w-6 h-4 rounded bg-[#41c2ef]"></div>
+            <div class="w-5 h-5 rounded bg-[#0B0F1A] border border-[#122645] ml-2"></div>
             <span class="text-[#94b1d2] text-xs">Absent</span>
-            <div class="w-6 h-4 rounded bg-[#0b182d] border border-[#122645]"></div>
           </div>
         </div>`;
+
+      // Select weeks handler
+      document.getElementById('heatmap-weeks-select').addEventListener('change', function() {
+        document.getElementById('heatmap-grid').innerHTML = buildHeatmap(parseInt(this.value));
+      });
+
     } catch(e) { content.innerHTML = '<p class="text-red-400 text-sm">Failed to load.</p>'; }
 
   } else if (tab === 'payment') {
@@ -888,14 +1270,16 @@ async function loadTab(tab) {
       }
       content.innerHTML = `
         <table class="w-full border-separate border-spacing-0">
-          <thead><tr class="bg-[#0b182d]">
-            ${['Receipt','Date','Plan','Method','Amount'].map(h => `<th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-4 py-3 border-b border-[#122645]">${h}</th>`).join('')}
+          <thead><tr class="bg-[#0B0F1A]">
+            ${['Receipt','Date','Plan','Method','Amount'].map(h =>
+              `<th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-4 py-3 border-b border-[#122645]">${h}</th>`
+            ).join('')}
           </tr></thead>
           <tbody class="divide-y divide-[#122645]">
             ${payments.map(p => `<tr class="hover:bg-[#11213c]">
-              <td class="px-4 py-3 text-[#41c2ef] text-sm font-semibold">${p.receipt_id || p.id?.slice(0,8) || '—'}</td>
+              <td class="px-4 py-3 text-[#41c2ef] text-sm font-semibold font-mono">${p.receipt_id || p.id?.slice(0,8).toUpperCase() || '—'}</td>
               <td class="px-4 py-3 text-[#94b1d2] text-sm">${p.date_fmt}</td>
-              <td class="px-4 py-3 text-white text-sm">${(p.plans?.name || '—')}</td>
+              <td class="px-4 py-3 text-white text-sm capitalize">${(p.plans?.name || '—')}</td>
               <td class="px-4 py-3 text-white text-sm capitalize">${p.payment_method || 'Cash'}</td>
               <td class="px-4 py-3 text-white text-sm font-semibold">${p.amount_fmt}</td>
             </tr>`).join('')}
@@ -905,13 +1289,13 @@ async function loadTab(tab) {
 
   } else if (tab === 'memberships') {
     try {
-      const d = await (await fetch(`/members/profile/${currentProfileId}/memberships`)).json();
+      const d    = await (await fetch(`/members/profile/${currentProfileId}/memberships`)).json();
       const curr = d.current;
       content.innerHTML = `
         <div class="border-b border-[#122645] pb-5 mb-5">
           <p class="text-xs uppercase tracking-[0.2em] text-[#527195] font-bold mb-3">Current Plan</p>
           ${curr ? `
-          <div class="flex items-center justify-between bg-[#0b182d] border border-[#1c3152] rounded-2xl px-6 py-4">
+          <div class="flex items-center justify-between bg-[#0B0F1A] border border-[#1c3152] rounded-2xl px-6 py-4">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-lg bg-[#41c2ef]/20 flex items-center justify-center">
                 <svg class="w-4 h-4 text-[#41c2ef]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -930,8 +1314,10 @@ async function loadTab(tab) {
         <div>
           <p class="text-xs uppercase tracking-[0.2em] text-[#527195] font-bold mb-3">Plan History</p>
           <table class="w-full border-separate border-spacing-0">
-            <thead><tr class="bg-[#0b182d]">
-              ${['Plan','Start Date','Expiry Date'].map(h => `<th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-4 py-3 border-b border-[#122645]">${h}</th>`).join('')}
+            <thead><tr class="bg-[#0B0F1A]">
+              ${['Plan','Start Date','Expiry Date'].map(h =>
+                `<th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-4 py-3 border-b border-[#122645]">${h}</th>`
+              ).join('')}
             </tr></thead>
             <tbody class="divide-y divide-[#122645]">
               ${(d.history || []).map(h => `<tr class="hover:bg-[#11213c]">
@@ -953,13 +1339,15 @@ async function loadTab(tab) {
       }
       content.innerHTML = `
         <table class="w-full border-separate border-spacing-0">
-          <thead><tr class="bg-[#0b182d]">
-            ${['Title','Created At','Description'].map((h,i) => `<th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-4 py-3 border-b border-[#122645] ${i===2?'w-1/2':''}">${h}</th>`).join('')}
+          <thead><tr class="bg-[#0B0F1A]">
+            ${['Title','Created At','Description'].map((h,i) =>
+              `<th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-4 py-3 border-b border-[#122645] ${i===2?'w-1/2':''}">${h}</th>`
+            ).join('')}
           </tr></thead>
           <tbody class="divide-y divide-[#122645]">
-            ${notes.map((n,i) => {
-              const date = (n.created_at || '').slice(0,10);
-              const desc = n.description || '';
+            ${notes.map((n, i) => {
+              const date  = (n.created_at || '').slice(0,10);
+              const desc  = n.description || '';
               const short = desc.length > 80 ? desc.slice(0,80) + '…' : desc;
               return `<tr class="hover:bg-[#11213c]">
                 <td class="px-4 py-3 text-white text-sm font-semibold align-top">${n.title || '—'}</td>

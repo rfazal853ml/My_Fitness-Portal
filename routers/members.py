@@ -1,5 +1,5 @@
 """
-Members router — list, add, edit, delete, view profile.
+Members router — list, add, edit, delete, view profile, invoice.
 All HTML responses; HTMX partials for search/pagination.
 """
 import json
@@ -28,6 +28,16 @@ def _gym_name() -> str:
         return r.data["value"] if r.data else "Gym25"
     except Exception:
         return "Gym25"
+
+
+def _gym_settings() -> dict:
+    """Fetch all gym settings as a key→value dict."""
+    try:
+        db = get_supabase()
+        rows = db.table("settings").select("key, value").execute().data or []
+        return {r["key"]: r["value"] for r in rows}
+    except Exception:
+        return {}
 
 
 def _get_plans() -> list:
@@ -108,10 +118,11 @@ async def search_members(
 @router.get("/check-cnic")
 async def check_cnic(
     cnic:         str,
+    cnic_type:    str = "member",
     exclude_id:   str = "",
     current_user: dict = Depends(get_current_user),
 ):
-    exists = MemberService.check_cnic(cnic, exclude_id)
+    exists = MemberService.check_cnic(cnic, exclude_id, cnic_type)
     return {"exists": exists}
 
 
@@ -126,6 +137,7 @@ async def create_member(
     date_of_birth:      str           = Form(""),
     cnic_type:          str           = Form("member"),
     cnic:               str           = Form(...),
+    guardian_cnic:      str           = Form(""),
     phone:              str           = Form(...),
     gender:             str           = Form(""),
     blood_group:        str           = Form(""),
@@ -157,26 +169,23 @@ async def create_member(
 
         MemberService.create({
             "full_name":          full_name,
-            "father_name":        father_name,
-            "age":                int(age) if age.strip().isdigit() else None,
+            "father_name":        father_name or None,
+            "age":                age or None,
             "date_of_birth":      date_of_birth or None,
+            "joining_date":       joining_date or None,
             "cnic_type":          cnic_type,
             "cnic":               cnic,
+            "guardian_cnic":      guardian_cnic,
             "phone":              phone,
-            "gender":             gender or None,
-            "blood_group":        blood_group or None,
             "email":              email or None,
-            "joining_date":       joining_date or None,
-            "health_issues":      health_issues,
+            "gender":             gender or None,
             "address":            address or None,
-            "admission_fee":      float(admission_fee or 0),
-            "discount_percent":   float(discount_percent or 0),
             "photo_url":          photo_url,
+            "notes":              note_description or None,
             "plan_id":            plan_id or None,
             "membership_start":   membership_start or None,
             "membership_expiry":  membership_expiry or None,
-            "note_title":         note_title or None,
-            "note_description":   note_description or None,
+            "registered_by":      current_user.get("id"),
         })
         return RedirectResponse(
             url="/members/?success=Member+added+successfully",
@@ -205,6 +214,7 @@ async def update_member(
     date_of_birth:      str  = Form(""),
     cnic_type:          str  = Form("member"),
     cnic:               str  = Form(...),
+    guardian_cnic:      str  = Form(""),
     phone:              str  = Form(...),
     gender:             str  = Form(""),
     blood_group:        str  = Form(""),
@@ -237,26 +247,23 @@ async def update_member(
         MemberService.update(member_id, {
             "full_name":          full_name,
             "father_name":        father_name or None,
-            "age":                int(age) if age.strip().isdigit() else None,
+            "age":                age or None,
             "date_of_birth":      date_of_birth or None,
             "cnic_type":          cnic_type,
             "cnic":               cnic,
-            "phone":              phone,
+            "guardian_cnic":      guardian_cnic,
+            "phone":              phone or None,
+            "email":              email or None,
             "gender":             gender or None,
             "blood_group":        blood_group or None,
-            "email":              email or None,
-            "joining_date":       joining_date or None,
-            "health_issues":      health_issues,
             "address":            address or None,
-            "admission_fee":      float(admission_fee or 0),
-            "discount_percent":   float(discount_percent or 0),
-            "is_active":          is_active == "true",
             "photo_url":          photo_url,
+            "is_active":          is_active == "true",
+            "health_issues":      health_issues,
+            "notes":              note_description or None,
             "plan_id":            plan_id or None,
             "membership_start":   membership_start or None,
             "membership_expiry":  membership_expiry or None,
-            "note_title":         note_title or None,
-            "note_description":   note_description or None,
         })
         return RedirectResponse(
             url="/members/?success=Member+updated+successfully",
@@ -308,6 +315,39 @@ async def delete_member(
         )
 
 
+# ── INVOICE / RECEIPT ─────────────────────────────────────────────────────────
+
+@router.get("/{member_id}/invoice", response_class=HTMLResponse)
+async def member_invoice(
+    member_id:    str,
+    request:      Request,
+    payment_id:   str  = "",
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Render a print-ready invoice/receipt for the member's latest (or specified) payment.
+    Opens in a new tab; user can Ctrl+P → Save as PDF.
+    """
+    member   = MemberService.get_by_id(member_id)
+    payments = MemberService.get_payments(member_id)
+
+    # Pick the requested payment or fall back to the most recent one
+    payment = None
+    if payment_id:
+        payment = next((p for p in payments if p.get("id") == payment_id), None)
+    if not payment and payments:
+        payment = payments[0]
+
+    gym_settings = _gym_settings()
+
+    return templates.TemplateResponse(request, "members/invoice.html", {
+        "member":       member,
+        "payment":      payment,
+        "gym_name":     _gym_name(),
+        "gym_settings": gym_settings,
+    })
+
+
 # ── PROFILE — JSON endpoints (loaded by JS inside the profile modal) ───────────
 
 @router.get("/profile/{member_id}/attendance")
@@ -351,12 +391,12 @@ async def profile_summary(
     member_id:    str,
     current_user: dict = Depends(get_current_user),
 ):
-    member     = MemberService.get_by_id(member_id)
-    attendance = MemberService.get_attendance(member_id)
+    member      = MemberService.get_by_id(member_id)
+    attendance  = MemberService.get_attendance(member_id)
     days_active = MemberService.get_days_active(member_id)
     return JSONResponse({
-        "member":      member,
-        "days_active": days_active,
+        "member":          member,
+        "days_active":     days_active,
         "attendance_rate": attendance["attendance_rate"],
-        "last_entry":  attendance["last_entry"],
+        "last_entry":      attendance["last_entry"],
     })

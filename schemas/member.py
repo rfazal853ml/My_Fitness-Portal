@@ -9,7 +9,7 @@ class MemberCreate(BaseModel):
     age: Optional[int] = None
     date_of_birth: Optional[str] = None
     cnic: str
-    garden_cnic: str
+    guardian_cnic: str
     phone: str
     gender: Optional[str] = None        # 'male' | 'female' | 'other'
     blood_group: Optional[str] = None
@@ -35,7 +35,7 @@ class MemberUpdate(BaseModel):
     age: Optional[int] = None
     date_of_birth: Optional[str] = None
     cnic: str
-    garden_cnic: str
+    guardian_cnic: str
     phone: Optional[str] = None
     gender: Optional[str] = None
     blood_group: Optional[str] = None
@@ -47,6 +47,7 @@ class MemberUpdate(BaseModel):
     discount_percent: Optional[float] = None
     photo_url: Optional[str] = None
     is_active: Optional[bool] = None
+    status: Optional[str] = None
     plan_id: Optional[str] = None
     membership_start: Optional[str] = None
     membership_expiry: Optional[str] = None
