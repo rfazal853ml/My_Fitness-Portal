@@ -80,18 +80,18 @@
 
 {% if tab == 'users' %}
 <div class="bg-[#1A2236]  rounded-2xl overflow-hidden shadow-[0_22px_50px_rgba(6,15,32,0.30)]">
-    <div class="px-6 py-5 border-b border-[#122645] bg-[#1A2236]">
+    <div class="px-6 py-5 border-b border-gray-700 bg-[#1A2236]">
         <h2 class="text-white text-lg font-bold tracking-tight">Users</h2>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full border-separate border-spacing-0">
             <thead>
                 <tr class="ms-10 bg-[#0b182d] rounded-2xl">
-                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-[#122645]">Name</th>
-                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-[#122645]">Role</th>
-                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-[#122645]">Last Login</th>
-                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-[#122645]">Status</th>
-                    <th class="text-right text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-[#122645]">Action</th>
+                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-gray-700">Name</th>
+                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-gray-700">Role</th>
+                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-gray-700">Last Login</th>
+                    <th class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-gray-700">Status</th>
+                    <th class="text-right text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-6 py-4 border-b border-gray-700">Action</th>
                 </tr>
             </thead>
             <tbody id="users-table-body" class="divide-y divide-[#122645] bg-[#1A2236]">
@@ -138,7 +138,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-[#122645] mt-auto">
+        <div class="grid grid-cols-2 gap-3 pt-4 border border-gray-700 mt-auto">
             <button onclick="openEditRole('{{ role.id }}', '{{ role.name }}', '{{ role.description }}', '{{ role.permission_ids | join(',') }}')"
                     class="flex-1 flex items-center justify-center gap-2 text-[#94b1d2] border border-gray-700 hover:bg-[#41C2EF]/90 hover:text-white py-3 rounded-2xl text-sm font-semibold transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,7 +215,7 @@
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Role <span class="text-[#ff7d7d]">*</span></label>
                 <select name="role_id" required
-                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                        class="csel-target csel-sm-target w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
                                text-gray-100 text-sm focus:outline-none focus:border-gray-700 transition-all">
                     <option value="" disabled selected>Select role</option>
                     {% for role in roles %}
@@ -305,7 +305,7 @@
             <div>
                 <label class="block text-[#94b1d2] text-sm font-medium mb-2">Status</label>
                 <select name="is_active" id="edit-status"
-                        class="w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
+                        class="csel-target csel-sm-target w-full bg-[#0b182d] border border-[#1c3152] rounded-xl px-4 py-3
                                text-gray-100 text-sm focus:outline-none focus:border-gray-700 transition-all">
                     <option value="true">Active</option>
                     <option value="false">Inactive</option>
@@ -364,7 +364,7 @@
                     <span class="text-xs text-[#94b1d2] font-bold uppercase tracking-wider text-center">Delete</span>
                 </div>
                 {% for module, perms in modules.items() %}
-                <div class="grid grid-cols-4 px-4 py-3.5 border-b border-[#122645] last:border-0 hover:bg-[#11213c]">
+                <div class="grid grid-cols-4 px-4 py-3.5 border-b border-gray-700 last:border-0 hover:bg-[#11213c]">
                     <div class="col-span-2 flex items-center gap-2">
                         <input type="checkbox" id="module-{{ module }}"
                                data-module="{{ module }}"

@@ -1,287 +1,531 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ gym_name }}{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/output.css">
     {% block head %}{% endblock %}
+    <style>
+        /* ── Custom Select ─────────────────────────────────────── */
+        .csel {
+            position: relative;
+            display: inline-block;
+        }
+
+        .csel.csel-sm {
+            display: block;
+            width: 100%;
+        }
+
+        .csel-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: #0b182d;
+            border: 1px solid #1c3152;
+            border-radius: 16px;
+            padding: 11px 16px;
+            font-size: 14px;
+            color: #d1d5db;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            transition: border-color .15s;
+        }
+
+        .csel-trigger:hover {
+            border-color: rgba(65, 194, 239, .3);
+        }
+
+        .csel-trigger.open {
+            border-color: rgba(65, 194, 239, .5);
+        }
+
+        .csel-arrow {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            color: #527195;
+            transition: transform .2s;
+        }
+
+        .csel-trigger.open .csel-arrow {
+            transform: rotate(180deg);
+        }
+
+        .csel-panel {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            min-width: 100%;
+            background: #0d1625;
+            border: 1px solid #1c3152;
+            border-radius: 16px;
+            padding: 6px;
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, .55);
+        }
+
+        .csel-panel.open {
+            display: block;
+        }
+
+        .csel-option {
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #d1d5db;
+            cursor: pointer;
+            transition: background .1s;
+        }
+
+        .csel-option:hover {
+            background: #1A2236;
+            color: #fff;
+        }
+
+        .csel-option.csel-selected {
+            background: #1A2236;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* ── Selects inside modals/forms (smaller variant) ─────── */
+        .csel-sm .csel-trigger {
+            padding: 11px 16px;
+            border-radius: 12px;
+            width: 100%;
+        }
+
+        .csel-sm .csel-panel {
+            border-radius: 12px;
+        }
+
+        /* ── Custom Tooltip ─────────────────────────────────────── */
+        .status-tip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 152px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .15s;
+            z-index: 999;
+        }
+
+        .status-tip-box {
+            background: #1A2236;
+            border: 1px solid #1c3152;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+            padding: 10px 12px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+            line-height: 1.4;
+        }
+
+        .status-tip-arrow {
+            width: 10px;
+            height: 10px;
+            background: #1A2236;
+            border-right: 1px solid #1c3152;
+            border-bottom: 1px solid #1c3152;
+            transform: rotate(45deg);
+            margin: -5px auto 0;
+        }
+    </style>
 </head>
+
 <body class="min-h-screen flex bg-[#000000] text-gray-100 font-sans antialiased">
 
-<aside class="w-64 min-h-screen bg-[#1A2236] flex flex-col fixed top-0 left-0 z-30 ">
+    <aside class="w-64 min-h-screen bg-[#1A2236] flex flex-col fixed top-0 left-0 z-30 ">
 
-    <div class="px-10 py-8 mb-4">
-        <div class="flex flex-col items-center justify-center gap-3 text-center">
-            <div class="w-16 h-16 flex items-center justify-center">
-                <img src="/static/images/logo.png" alt="Gym25 Logo" class="w-16 h-16 object-contain">
+        <div class="px-10 py-8 mb-4">
+            <div class="flex flex-col items-center justify-center gap-3 text-center">
+                <div class="w-16 h-16 flex items-center justify-center">
+                    <img src="/static/images/logo.png" alt="Gym25 Logo" class="w-16 h-16 object-contain">
+                </div>
+                <span class="text-white text-3xl font-bold tracking-tight">
+                    Gym<span class="text-[#41c2ef]">25</span>
+                </span>
             </div>
-            <span class="text-white text-3xl font-bold tracking-tight">
-                Gym<span class="text-[#41c2ef]">25</span>
-            </span>
         </div>
-    </div>
 
-    <nav class="flex-1 px-4 space-y-1.5 overflow-y-auto">
+        <nav class="flex-1 px-4 space-y-1.5 overflow-y-auto">
 
-        <a href="/dashboard"
-           class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+            <a href="/dashboard"
+                class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
                   {% if active_page == 'dashboard' %} bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-            </svg>
-            Dashboard
-        </a>
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                Dashboard
+            </a>
 
-        <div class="space-y-1">
+            <div class="space-y-1">
                 {% if user and (user.is_superuser or 'members:view' in (user.permissions or [])) %}
                 <button onclick="toggleSubmenu('members-sub')"
                     class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
                        {% if active_page == 'members' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="flex-1 text-left">Members</span>
+                    <svg id="members-arrow"
+                        class="w-4 h-4 transform transition-transform duration-200 {% if active_page == 'members' %}rotate-180{% endif %}"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div id="members-sub" class="pl-12 pr-2 space-y-1 {% if active_page != 'members' %}hidden{% endif %}">
+                    <a href="/members"
+                        class="block px-3 py-2 text-xs font-medium text-[#94b1d2] hover:text-[#41c2ef] rounded-xl transition-colors">All
+                        Members</a>
+                    <a href="/members/renewals"
+                        class="block px-3 py-2 text-xs font-medium text-[#94b1d2] hover:text-[#41c2ef] rounded-xl transition-colors">Renewal
+                        Logs</a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user and (user.is_superuser or 'attendance:view' in (user.permissions or [])) %}
+            <a href="/attendance"
+                class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                        {% if active_page == 'attendance' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
                 </svg>
-                <span class="flex-1 text-left">Members</span>
-                <svg id="members-arrow" class="w-4 h-4 transform transition-transform duration-200 {% if active_page == 'members' %}rotate-180{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-            </button>
-            <div id="members-sub" class="pl-12 pr-2 space-y-1 {% if active_page != 'members' %}hidden{% endif %}">
-                <a href="/members" class="block px-3 py-2 text-xs font-medium text-[#94b1d2] hover:text-[#41c2ef] rounded-xl transition-colors">All Members</a>
-                <a href="/members/renewals" class="block px-3 py-2 text-xs font-medium text-[#94b1d2] hover:text-[#41c2ef] rounded-xl transition-colors">Renewal Logs</a>
-            </div>
-        </div>
-        {% endif %}
+                Attendance
+            </a>
+            {% endif %}
 
-          {% if user and (user.is_superuser or 'attendance:view' in (user.permissions or [])) %}
-          <a href="/attendance"
-              class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                        {% if active_page == 'attendance' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/>
-            </svg>
-            Attendance
-        </a>
-        {% endif %}
-
-          {% if user and (user.is_superuser or 'payments:view' in (user.permissions or [])) %}
-          <a href="/payments"
-              class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+            {% if user and (user.is_superuser or 'payments:view' in (user.permissions or [])) %}
+            <a href="/payments"
+                class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
                         {% if active_page == 'payments' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-            </svg>
-            Payment
-        </a>
-        {% endif %}
-
-          {% if user and (user.is_superuser or 'expenses:view' in (user.permissions or [])) %}
-          <a href="/expenses"
-              class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                        {% if active_page == 'expenses' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 022 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-            </svg>
-            Expenses
-        </a>
-        {% endif %}
-
-          {% if user and (user.is_superuser or 'plans:view' in (user.permissions or [])) %}
-          <a href="/plans"
-              class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                        {% if active_page == 'plans' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-            </svg>
-            Plans
-        </a>
-        {% endif %}
-
-          {% if user and (user.is_superuser or 'users:view' in (user.permissions or [])) %}
-          <a href="/users"
-              class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                        {% if active_page == 'users' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            User Management
-        </a>
-        {% endif %}
-
-          {% if user and (user.is_superuser or 'reports:view' in (user.permissions or [])) %}
-          <a href="/reports"
-              class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                        {% if active_page == 'reports' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            Reports
-        </a>
-        {% endif %}
-
-          {% if user and (user.is_superuser or 'settings:view' in (user.permissions or [])) %}
-          <a href="/settings"
-              class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                        {% if active_page == 'settings' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-            Settings
-        </a>
-        {% endif %}
-
-    </nav>
-
-    <div class="p-4 border-t border-gray-700">
-        <a href="/auth/logout"
-           class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium
-                  text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-            </svg>
-            Logout
-        </a>
-    </div>
-</aside>
-
-<div class="ml-64 flex-1 flex flex-col min-h-screen">
-
-    <header class="ms-10 h-20 bg-[#1A2236] flex items-center justify-between px-10 sticky top-0 z-20 rounded-b-2xl me-10">
-        <h1 class="text-white text-xl font-bold tracking-tight">{{ page_title }}</h1>
-        <div class="flex items-center gap-4">
-            
-            <button class="w-11 h-11 bg-[#091425] border border-gray-700 rounded-2xl flex items-center justify-center hover:bg-[#41C2EF]/90 transition-colors relative">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
-                <span class="absolute top-2.5 right-2.5 w-2 h-2 bg-[#41c2ef] rounded-full animate-pulse"></span>
-            </button>
-            
+                Payment
+            </a>
+            {% endif %}
+
+            {% if user and (user.is_superuser or 'expenses:view' in (user.permissions or [])) %}
+            <a href="/expenses"
+                class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                        {% if active_page == 'expenses' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 022 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Expenses
+            </a>
+            {% endif %}
+
+            {% if user and (user.is_superuser or 'plans:view' in (user.permissions or [])) %}
+            <a href="/plans"
+                class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                        {% if active_page == 'plans' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Plans
+            </a>
+            {% endif %}
+
+            {% if user and (user.is_superuser or 'users:view' in (user.permissions or [])) %}
+            <a href="/users"
+                class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                        {% if active_page == 'users' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                User Management
+            </a>
+            {% endif %}
+
+            {% if user and (user.is_superuser or 'reports:view' in (user.permissions or [])) %}
+            <a href="/reports"
+                class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                        {% if active_page == 'reports' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Reports
+            </a>
+            {% endif %}
+
+            {% if user and (user.is_superuser or 'settings:view' in (user.permissions or [])) %}
+            <a href="/settings"
+                class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                        {% if active_page == 'settings' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Settings
+            </a>
+            {% endif %}
+
+        </nav>
+
+        <div class="p-4 border-t border-gray-700">
+            <a href="/auth/logout" class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium
+                  text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+            </a>
+        </div>
+    </aside>
+
+    <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+        <header
+            class="ms-10 h-20 bg-[#1A2236] flex items-center justify-between px-10 sticky top-0 z-20 rounded-b-2xl me-10">
+            <h1 class="text-white text-xl font-bold tracking-tight">{{ page_title }}</h1>
+            <div class="flex items-center gap-4">
+
+                <button
+                    class="w-11 h-11 bg-[#091425] border border-gray-700 rounded-2xl flex items-center justify-center hover:bg-[#41C2EF]/90 transition-colors relative">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span class="absolute top-2.5 right-2.5 w-2 h-2 bg-[#41c2ef] rounded-full animate-pulse"></span>
+                </button>
+
                 {% if user and user.photo_url %}
-                <img src="{{ user.photo_url }}" alt="{{ user.name }}" class="w-11 h-11 rounded-full object-cover flex-shrink-0">
+                <img src="{{ user.photo_url }}" alt="{{ user.name }}"
+                    class="w-11 h-11 rounded-full object-cover flex-shrink-0">
                 {% else %}
-                <div class="w-11 h-11 rounded-full bg-[#122d4f] border border-gray-700 flex items-center justify-center text-[#41c2ef] text-xs font-bold">
-                        {{ user.name[0].upper() if user and user.name else 'A' }}
-                    </div>
+                <div
+                    class="w-11 h-11 rounded-full bg-[#122d4f] border border-gray-700 flex items-center justify-center text-[#41c2ef] text-xs font-bold">
+                    {{ user.name[0].upper() if user and user.name else 'A' }}
+                </div>
                 {% endif %}
-        </div>
-    </header>
-
-    {% if success or error %}
-    <div class="px-10 pt-6">
-        {% if success %}
-        <div class="flash-message bg-green-500/10 border border-green-500/30 text-green-400 px-5 py-3.5 rounded-2xl text-sm flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.15)]">
-            <span class="font-medium">✓ {{ success }}</span>
-            <button onclick="this.parentElement.remove()" class="text-green-400/60 hover:text-green-400 text-xs">✕</button>
-        </div>
-        {% endif %}
-        {% if error %}
-        <div class="flash-message bg-red-500/10 border border-red-500/30 text-red-400 px-5 py-3.5 rounded-2xl text-sm flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.15)]">
-            <span class="font-medium">{{ error }}</span>
-            <button onclick="this.parentElement.remove()" class="text-red-400/60 hover:text-red-400 text-xs">✕</button>
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    <main class="flex-1 p-10">
-        {% block content %}{% endblock %}
-    </main>
-
-</div>
-
-<script>
-function toggleSubmenu(id) {
-    const el = document.getElementById(id);
-    const arrow = document.getElementById('members-arrow');
-    el.classList.toggle('hidden');
-    if(arrow) {
-        arrow.classList.toggle('rotate-180');
-    }
-}
-
-
-</script>
-
-<script>
-// Auto-hide flash messages after 10 seconds with a short fade-out
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.flash-message').forEach(el => {
-        setTimeout(() => {
-            el.classList.add('opacity-0', 'transition-opacity', 'duration-500');
-            setTimeout(() => el.remove(), 500);
-        }, 10000);
-    });
-});
-</script>
-
-<div id="confirm-overlay" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/70 p-4">
-    <div class="w-full max-w-md rounded-[28px] bg-[#1A2236] border border-gray-700 rounded-2xl p-6">
-        <div class="flex items-start justify-between gap-4">
-            <div>
-                <p class="text-xs uppercase tracking-[0.28em] text-[#94b1d2] mb-2">Confirm action</p>
-                <h2 id="confirm-title" class="text-white text-xl font-semibold leading-snug">Confirm</h2>
-                <p id="confirm-message" class="mt-3 text-sm text-[#94b1d2] leading-relaxed"></p>
             </div>
-            <button type="button" onclick="closeConfirm()" class="bg-[#0f172a] p-2 text-[#94b1d2] hover:bg-[#111827] transition-colors">
-                <svg class="w-6 h-6 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            </button>
+        </header>
+
+        {% if success or error %}
+        <div class="px-10 pt-6">
+            {% if success %}
+            <div
+                class="flash-message bg-green-500/10 border border-green-500/30 text-green-400 px-5 py-3.5 rounded-2xl text-sm flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.15)]">
+                <span class="font-medium">✓ {{ success }}</span>
+                <button onclick="this.parentElement.remove()"
+                    class="text-green-400/60 hover:text-green-400 text-xs">✕</button>
+            </div>
+            {% endif %}
+            {% if error %}
+            <div
+                class="flash-message bg-red-500/10 border border-red-500/30 text-red-400 px-5 py-3.5 rounded-2xl text-sm flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.15)]">
+                <span class="font-medium">{{ error }}</span>
+                <button onclick="this.parentElement.remove()"
+                    class="text-red-400/60 hover:text-red-400 text-xs">✕</button>
+            </div>
+            {% endif %}
         </div>
-        <div class="mt-6 flex justify-end gap-3">
-            <button type="button" onclick="closeConfirm()" class="rounded-2xl border border-[#1c3152] px-4 py-2 text-sm font-medium text-[#94b1d2] hover:bg-[#111827] hover:text-white transition-colors">Cancel</button>
-            <button id="confirm-ok-btn" type="button" class="rounded-2xl bg-[#41c2ef] px-4 py-2 text-sm font-semibold text-gray-900 hover:text-white hover:bg-[#41c2ef]/90 transition-colors">Confirm</button>
+        {% endif %}
+
+        <main class="flex-1 p-10">
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+
+    <script>
+        function toggleSubmenu(id) {
+            const el = document.getElementById(id);
+            const arrow = document.getElementById('members-arrow');
+            el.classList.toggle('hidden');
+            if (arrow) {
+                arrow.classList.toggle('rotate-180');
+            }
+        }
+
+
+    </script>
+
+    <script>
+        // Auto-hide flash messages after 10 seconds with a short fade-out
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.flash-message').forEach(el => {
+                setTimeout(() => {
+                    el.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                    setTimeout(() => el.remove(), 500);
+                }, 10000);
+            });
+        });
+    </script>
+
+    <div id="confirm-overlay" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/70 p-4">
+        <div class="w-full max-w-md rounded-[28px] bg-[#1A2236] border border-gray-700 rounded-2xl p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.28em] text-[#94b1d2] mb-2">Confirm action</p>
+                    <h2 id="confirm-title" class="text-white text-xl font-semibold leading-snug">Confirm</h2>
+                    <p id="confirm-message" class="mt-3 text-sm text-[#94b1d2] leading-relaxed"></p>
+                </div>
+                <button type="button" onclick="closeConfirm()" class="p-2 text-[#94b1d2]">
+                    <svg class="w-6 h-6 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button type="button" onclick="closeConfirm()"
+                    class="rounded-2xl border border-[#1c3152] px-4 py-2 text-sm font-medium text-[#94b1d2] hover:bg-[#111827] hover:text-white transition-colors">Cancel</button>
+                <button id="confirm-ok-btn" type="button"
+                    class="rounded-2xl bg-[#41c2ef] px-4 py-2 text-sm font-semibold text-gray-900 hover:text-white hover:bg-[#41c2ef]/90 transition-colors">Confirm</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    const confirmState = { form: null };
+    <script>
+        const confirmState = { form: null };
 
-    function confirmAction(form, message, title = 'Confirm action') {
-        confirmState.form = form;
-        document.getElementById('confirm-title').textContent = title;
-        document.getElementById('confirm-message').textContent = message;
-        const overlay = document.getElementById('confirm-overlay');
-        overlay.classList.remove('hidden');
-        overlay.classList.add('flex');
-        document.getElementById('confirm-ok-btn').focus();
-        return false;
-    }
-
-    function closeConfirm() {
-        confirmState.form = null;
-        const overlay = document.getElementById('confirm-overlay');
-        overlay.classList.remove('flex');
-        overlay.classList.add('hidden');
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const okBtn = document.getElementById('confirm-ok-btn');
-        if (okBtn) {
-            okBtn.addEventListener('click', () => {
-                if (confirmState.form) {
-                    confirmState.form.submit();
-                    closeConfirm();
-                }
-            });
+        function confirmAction(form, message, title = 'Confirm action') {
+            confirmState.form = form;
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            const overlay = document.getElementById('confirm-overlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            document.getElementById('confirm-ok-btn').focus();
+            return false;
         }
-    });
-</script>
 
-{% block scripts %}{% endblock %}
+        function closeConfirm() {
+            confirmState.form = null;
+            const overlay = document.getElementById('confirm-overlay');
+            overlay.classList.remove('flex');
+            overlay.classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const okBtn = document.getElementById('confirm-ok-btn');
+            if (okBtn) {
+                okBtn.addEventListener('click', () => {
+                    if (confirmState.form) {
+                        confirmState.form.submit();
+                        closeConfirm();
+                    }
+                });
+            }
+        });
+
+        /* ── Custom Select Widget ──────────────────────────────── */
+        (function () {
+            function build(sel) {
+                if (sel.dataset.cselDone) return;
+                sel.dataset.cselDone = '1';
+
+                const isSmall = sel.classList.contains('csel-sm-target');
+                const wrap = document.createElement('div');
+                wrap.className = 'csel' + (isSmall ? ' csel-sm' : '');
+
+                sel.parentNode.insertBefore(wrap, sel);
+                sel.style.display = 'none';
+                wrap.appendChild(sel);
+
+                /* trigger */
+                const trigger = document.createElement('div');
+                trigger.className = 'csel-trigger';
+                const label = document.createElement('span');
+                label.className = 'csel-label';
+
+                const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                arrow.setAttribute('class', 'csel-arrow');
+                arrow.setAttribute('viewBox', '0 0 24 24');
+                arrow.setAttribute('fill', 'none');
+                arrow.setAttribute('stroke', 'currentColor');
+                arrow.setAttribute('stroke-width', '2');
+                const ap = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                ap.setAttribute('stroke-linecap', 'round');
+                ap.setAttribute('stroke-linejoin', 'round');
+                ap.setAttribute('d', 'M19 9l-7 7-7-7');
+                arrow.appendChild(ap);
+                trigger.appendChild(label);
+                trigger.appendChild(arrow);
+
+                /* panel */
+                const panel = document.createElement('div');
+                panel.className = 'csel-panel';
+
+                function syncLabel() {
+                    label.textContent = sel.options[sel.selectedIndex]?.text || '';
+                }
+                function renderOpts() {
+                    panel.innerHTML = '';
+                    Array.from(sel.options).forEach((opt, i) => {
+                        if (opt.disabled) return;
+                        const d = document.createElement('div');
+                        d.className = 'csel-option' + (sel.selectedIndex === i ? ' csel-selected' : '');
+                        d.textContent = opt.text;
+                        d.addEventListener('click', () => {
+                            sel.selectedIndex = i;
+                            sel.dispatchEvent(new Event('change', { bubbles: true }));
+                            syncLabel(); renderOpts(); closePanel();
+                        });
+                        panel.appendChild(d);
+                    });
+                }
+
+                function openPanel() { trigger.classList.add('open'); panel.classList.add('open'); }
+                function closePanel() { trigger.classList.remove('open'); panel.classList.remove('open'); }
+
+                trigger.addEventListener('click', e => {
+                    e.stopPropagation();
+                    panel.classList.contains('open') ? closePanel() : openPanel();
+                });
+                panel.addEventListener('click', e => e.stopPropagation());
+                document.addEventListener('click', closePanel);
+
+                /* keep label in sync when value set programmatically */
+                sel.addEventListener('change', () => { syncLabel(); renderOpts(); });
+
+                syncLabel(); renderOpts();
+                wrap.appendChild(trigger);
+                wrap.appendChild(panel);
+            }
+
+            function initAll() {
+                document.querySelectorAll('select.csel-target').forEach(build);
+            }
+
+            if (document.readyState === 'loading')
+                document.addEventListener('DOMContentLoaded', initAll);
+            else initAll();
+
+            window.initCustomSelects = initAll;
+        })();
+
+        /* ── Tooltip helpers ───────────────────────────────────── */
+        function showTip(el) { el.querySelector('.status-tip').style.opacity = '1'; }
+        function hideTip(el) { el.querySelector('.status-tip').style.opacity = '0'; }
+    </script>
+
+    {% block scripts %}{% endblock %}
 </body>
+
 </html>

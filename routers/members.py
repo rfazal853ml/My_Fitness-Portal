@@ -356,21 +356,36 @@ async def member_invoice(
     payment_id:   str  = "",
     current_user: dict = Depends(get_current_user),
 ):
-    member   = MemberService.get_by_id(member_id)
-    payments = MemberService.get_payments(member_id)
+    member      = MemberService.get_by_id(member_id)
+    payments    = MemberService.get_payments(member_id)
+    memberships = MemberService.get_memberships(member_id)
 
-    # Use requested payment or fall back to most recent
+    # Header receipt — use requested payment or most recent
     payment = None
     if payment_id:
         payment = next((p for p in payments if str(p.get("id")) == payment_id), None)
     if not payment and payments:
         payment = payments[0]
 
+    # Totals
+    total_original = sum(p["amount_raw"]   for p in payments)
+    total_discount = sum(p["discount_raw"] for p in payments)
+    total_final    = sum(p["amount_raw"] - p["discount_raw"] for p in payments)
+    total_paid     = sum(p["amount_raw"] - p["discount_raw"] for p in payments if p["status"] == "paid")
+    total_pending  = sum(p["amount_raw"] - p["discount_raw"] for p in payments if p["status"] != "paid")
+
     return templates.TemplateResponse(request, "invoice/invoice.html", {
-        "member":       member,
-        "payment":      payment,
-        "gym_name":     _gym_name(),
-        "gym_settings": _gym_settings(),
+        "member":          member,
+        "payment":         payment,
+        "payments":        payments,
+        "memberships":     memberships,
+        "gym_name":        _gym_name(),
+        "gym_settings":    _gym_settings(),
+        "total_original":  total_original,
+        "total_discount":  total_discount,
+        "total_final":     total_final,
+        "total_paid":      total_paid,
+        "total_pending":   total_pending,
     })
 
 
@@ -401,12 +416,17 @@ async def profile_summary(
     member.pop("membership", None)
     member.pop("memberships", None)
 
+    admission = MemberService.get_admission_fee(member_id)
+
     return JSONResponse({
-        "member":          member,
-        "days_active":     days_active,
-        "attendance_rate": attendance["attendance_rate"],
-        "fee_status":      member.get("fee_status", "unpaid"),
-        "last_entry":      attendance["last_entry"],
+        "member":               member,
+        "days_active":          days_active,
+        "attendance_rate":      attendance["attendance_rate"],
+        "fee_status":           member.get("fee_status", "unpaid"),
+        "last_entry":           attendance["last_entry"],
+        "admission_fee":        admission["admission_fee"],
+        "admission_discount":   admission["admission_discount"],
+        "admission_final":      admission["admission_final"],
     })
 
 

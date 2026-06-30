@@ -26,9 +26,10 @@ def _fmt_date(val: Optional[str]) -> str:
 
 
 def _fee_status(membership: Optional[dict]) -> str:
-    """Derive fee status from the active membership."""
     if not membership:
         return "unpaid"
+
+    # Expired check first
     expiry = membership.get("expiry_date")
     if expiry:
         try:
@@ -37,7 +38,15 @@ def _fee_status(membership: Optional[dict]) -> str:
                 return "expired"
         except Exception:
             pass
-    return "paid" if membership.get("status") == "active" else "unpaid"
+
+    # Read payment status from joined payments (set in get_all / get_by_id select)
+    payments = membership.get("payments") or []
+    if isinstance(payments, list):
+        for p in payments:
+            if p.get("status") == "paid":
+                return "paid"
+
+    return "unpaid"
 
 
 def _enrich_member(m: dict) -> dict:
@@ -86,30 +95,24 @@ class MemberService:
         return {"total": total, "active": active, "male": male, "female": female}
 
     # ── List Members ───────────────────────────────────────────────────────────
-
     @staticmethod
-    def get_all(
-        search:   str = "",
-        plan_id:  str = "",
-        status:   str = "",
-        gender:   str = "",
-        page:     int = 1,
-        per_page: int = 15,
-    ) -> dict:
+    def get_all(search: str = "", plan_id: str = "", status: str = "", gender: str = "", page: int = 1, per_page: int = 15) -> dict:
         db = get_supabase()
-
+        matched_ids = []
+    
         query = (
             db.table("members")
             .select(
                 "*, "
                 "memberships!memberships_member_id_fkey("
                 "  id, plan_id, start_date, expiry_date, status,"
-                "  plans(id, name, price)"
+                "  plans(id, name, price),"
+                "  payments!payments_membership_id_fkey(status)"
                 ")"
             )
             .order("created_at", desc=True)
         )
-
+    
         if search:
             query = query.or_(
                 f"name.ilike.%{search}%,"
@@ -122,14 +125,27 @@ class MemberService:
             query = query.eq("status", "active")
         elif status in ("inactive", "suspended"):
             query = query.eq("status", status)
-
+    
+        if plan_id:
+            ms = (
+                db.table("memberships")
+                .select("member_id")
+                .eq("plan_id", plan_id)
+                .eq("status", "active")
+                .execute()
+            ).data or []
+            matched_ids = [r["member_id"] for r in ms if r.get("member_id")]
+            if not matched_ids:
+                return {"members": [], "total": 0, "page": page, "per_page": per_page, "total_pages": 0}
+            query = query.in_("id", matched_ids)
+    
         offset = (page - 1) * per_page
         query  = query.range(offset, offset + per_page - 1)
-
+    
         result  = query.execute()
         members = [_enrich_member(m) for m in (result.data or [])]
-
-        # Total count (re-query without range)
+    
+        # Count query
         count_q = db.table("members").select("id", count="exact")
         if search:
             count_q = count_q.or_(
@@ -143,10 +159,12 @@ class MemberService:
             count_q = count_q.eq("status", "active")
         elif status in ("inactive", "suspended"):
             count_q = count_q.eq("status", status)
-
+        if plan_id and matched_ids:
+            count_q = count_q.in_("id", matched_ids)
+    
         total       = count_q.execute().count or 0
         total_pages = max(1, (total + per_page - 1) // per_page)
-
+    
         return {
             "members":     members,
             "total":       total,
@@ -166,7 +184,8 @@ class MemberService:
                 "*, "
                 "memberships!memberships_member_id_fkey("
                 "  id, plan_id, start_date, expiry_date, status,"
-                "  plans(id, name, price)"
+                "  plans(id, name, price),"
+                "  payments!payments_membership_id_fkey(status)"
                 ")"
             )
             .eq("id", member_id)
@@ -267,46 +286,70 @@ class MemberService:
         except Exception:
             admission_fee = 0
 
+        # Admission fee — no discount, status pending until confirmed
         if admission_fee > 0:
-            try:
-                discount_pct    = float(data.get("discount_percent") or 0)
-                discount_amount = round(admission_fee * discount_pct / 100, 2)
-            except Exception:
-                discount_amount = 0
-
             db.table("payments").insert({
                 "member_id":      member["id"],
+                "membership_id":  None,
                 "amount":         admission_fee,
-                "discount":       discount_amount,
+                "discount":       0,
                 "payment_method": data.get("payment_method") or "cash",
                 "payment_date":   data.get("joining_date") or date.today().isoformat(),
                 "notes":          "Admission fee",
-                "status":         "paid",
+                "status":         "pending",
             }).execute()
 
         # Create membership if plan selected
         plan_id = data.get("plan_id")
         if plan_id:
+            # Calculate expiry
             start_iso  = data.get("membership_start") or date.today().isoformat()
             expiry_iso = data.get("membership_expiry")
             if not expiry_iso:
-                # expiry_date is NOT NULL — calculate from plan duration_days
                 try:
-                    plan_row = get_supabase().table("plans").select("duration_days").eq("id", plan_id).single().execute()
-                    dur_days = (plan_row.data or {}).get("duration_days") or 30
+                    plan_row = get_supabase().table("plans").select("duration_days, price").eq("id", plan_id).single().execute()
+                    dur_days  = (plan_row.data or {}).get("duration_days") or 30
+                    plan_price = float((plan_row.data or {}).get("price") or 0)
                 except Exception:
-                    dur_days = 30
+                    dur_days = 30; plan_price = 0
                 from datetime import timedelta
                 start_d    = datetime.strptime(start_iso[:10], "%Y-%m-%d").date()
                 expiry_iso = (start_d + timedelta(days=int(dur_days))).isoformat()
+            else:
+                try:
+                    plan_row   = get_supabase().table("plans").select("price").eq("id", plan_id).single().execute()
+                    plan_price = float((plan_row.data or {}).get("price") or 0)
+                except Exception:
+                    plan_price = 0
 
-            db.table("memberships").insert({
+            # Create membership
+            ms_result = db.table("memberships").insert({
                 "member_id":   member["id"],
                 "plan_id":     plan_id,
                 "start_date":  start_iso,
                 "expiry_date": expiry_iso,
                 "status":      "active",
             }).execute()
+            membership_id = ms_result.data[0]["id"] if ms_result.data else None
+
+            # Create plan payment — status PENDING until MVP2 payment module confirms it
+            if membership_id:
+                try:
+                    disc_pct    = float(data.get("discount_percent") or 0)
+                    disc_amount = round(plan_price * disc_pct / 100, 2)
+                except Exception:
+                    disc_amount = 0
+
+                db.table("payments").insert({
+                    "member_id":      member["id"],
+                    "membership_id":  membership_id,
+                    "amount":         plan_price,
+                    "discount":       disc_amount,
+                    "payment_method": data.get("payment_method") or "cash",
+                    "payment_date":   start_iso,
+                    "notes":          "Plan payment",
+                    "status":         "pending",   # ← shows Unpaid; flip to 'paid' manually in DB until MVP2
+                }).execute()
 
         # Create note if provided
         note_title = (data.get("note_title") or "").strip()
@@ -542,6 +585,7 @@ class MemberService:
             "last_entry":      last_entry or "—",
             "avg_checkin":     avg_checkin,
             "present_dates":   sorted(present_dates),
+            "joining_date":    joining or "",        # ← add this line
         }
 
     # ── Profile: Payments ──────────────────────────────────────────────────────
@@ -573,8 +617,9 @@ class MemberService:
                 "date":        _fmt_date(r.get("payment_date")),
                 "plan":        plan_name.capitalize() if plan_name != "—" else "—",
                 "method":      (r.get("payment_method") or "cash").replace("_", " ").title(),
-                "amount":      f"PKR {int(float(r.get('amount') or 0)):,}",
-                "amount_raw":  float(r.get("amount") or 0),
+                "amount_raw":    float(r.get("amount")   or 0),
+                "discount_raw":  float(r.get("discount") or 0),
+                "amount":        f"PKR {int(max(0, float(r.get('amount') or 0) - float(r.get('discount') or 0))):,}",
                 "status":      r.get("status") or "paid",
             })
         return out
@@ -634,3 +679,27 @@ class MemberService:
                 "created_at":  _fmt_date(r.get("created_at")),
             })
         return out
+    
+    # ── Profile: Admission Fee ─────────────────────────────────────────────────
+
+    @staticmethod
+    def get_admission_fee(member_id: str) -> dict:
+        db = get_supabase()
+        result = (
+            db.table("payments")
+            .select("amount, discount")
+            .eq("member_id", member_id)
+            .eq("notes", "Admission fee")
+            .limit(1)
+            .execute()
+        )
+        if result.data:
+            r = result.data[0]
+            amount   = float(r.get("amount")   or 0)
+            discount = float(r.get("discount") or 0)
+            return {
+                "admission_fee":      amount,
+                "admission_discount": discount,
+                "admission_final":    max(0, amount - discount),
+            }
+        return {"admission_fee": 0, "admission_discount": 0, "admission_final": 0}
