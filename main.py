@@ -10,6 +10,7 @@ from routers import users as users_router
 from routers import plans as plans_router
 from routers import members as members_router
 from routers import renewals as renewals_router
+from routers import biometric as biometric_router
 from utils.dependencies import get_current_user
 from services.storage_service import StorageService
 
@@ -44,6 +45,8 @@ def create_app() -> FastAPI:
     app.include_router(plans_router.router)
     app.include_router(members_router.router)
     app.include_router(renewals_router.router)
+    app.include_router(biometric_router.router)
+    app.include_router(biometric_router.iclock_router)
     # Root redirect → login
     @app.get("/")
     async def root():
