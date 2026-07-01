@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ gym_name }}{% endblock %}</title>
+    <link rel="icon" type="image/png" href="/static/images/logo.png">
     <link rel="stylesheet" href="/static/css/output.css">
     {% block head %}{% endblock %}
     <style>
@@ -188,9 +189,9 @@
                 </button>
                 <div id="members-sub" class="pl-12 pr-2 space-y-1 {% if active_page != 'members' %}hidden{% endif %}">
                     <a href="/members"
-                        class="block px-3 py-2 text-xs font-medium text-[#94b1d2] hover:text-[#41c2ef] rounded-xl transition-colors">All
+                        class="block px-3 py-2 text-xs font-medium text-[#94b1d2] hover:text-[#41c2ef] rounded-xl transition-colors">
                         Members</a>
-                    <a href="/members/renewals"
+                    <a href="/renewals"
                         class="block px-3 py-2 text-xs font-medium text-[#94b1d2] hover:text-[#41c2ef] rounded-xl transition-colors">Renewal
                         Logs</a>
                 </div>
@@ -227,7 +228,7 @@
                         {% if active_page == 'expenses' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 022 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 Expenses
             </a>
@@ -266,6 +267,19 @@
                         d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Reports
+            </a>
+            {% endif %}
+
+            {% if user and (user.is_superuser or 'hardware:view' in (user.permissions or [])) %}
+            <a href="/biomatric-devices"
+                class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                        {% if active_page == 'hardware' %}bg-[#303F5A] text-[#41c2ef]{% else %}text-[#94b1d2] border border-transparent hover:text-white hover:bg-[#11213c]{% endif %}">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.5 19.5h3m-6.75 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-15a2.25 2.25 0 0 0-2.25-2.25H6.75A2.25 2.25 0 0 0 4.5 4.5v15a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+
+                Biometric Devices
             </a>
             {% endif %}
 

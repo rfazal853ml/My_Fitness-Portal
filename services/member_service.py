@@ -106,7 +106,7 @@ class MemberService:
                 "*, "
                 "memberships!memberships_member_id_fkey("
                 "  id, plan_id, start_date, expiry_date, status,"
-                "  plans(id, name, price),"
+                "  plans!memberships_plan_id_fkey(id, name, price),"
                 "  payments!payments_membership_id_fkey(status)"
                 ")"
             )
@@ -114,11 +114,18 @@ class MemberService:
         )
     
         if search:
-            query = query.or_(
+            search_filters = (
                 f"name.ilike.%{search}%,"
                 f"cnic.ilike.%{search}%,"
                 f"phone.ilike.%{search}%"
             )
+            # If search is numeric, also allow exact ID match
+            try:
+                search_id = int(search)
+                search_filters += f",id.eq.{search_id}"
+            except ValueError:
+                pass
+            query = query.or_(search_filters)
         if gender and gender != "all":
             query = query.eq("gender", gender)
         if status == "active":
@@ -148,11 +155,18 @@ class MemberService:
         # Count query
         count_q = db.table("members").select("id", count="exact")
         if search:
-            count_q = count_q.or_(
+            search_filters = (
                 f"name.ilike.%{search}%,"
                 f"cnic.ilike.%{search}%,"
                 f"phone.ilike.%{search}%"
             )
+            # If search is numeric, also allow exact ID match
+            try:
+                search_id = int(search)
+                search_filters += f",id.eq.{search_id}"
+            except ValueError:
+                pass
+            count_q = count_q.or_(search_filters)
         if gender and gender != "all":
             count_q = count_q.eq("gender", gender)
         if status == "active":
@@ -184,7 +198,7 @@ class MemberService:
                 "*, "
                 "memberships!memberships_member_id_fkey("
                 "  id, plan_id, start_date, expiry_date, status,"
-                "  plans(id, name, price),"
+                "  plans!memberships_plan_id_fkey(id, name, price),"
                 "  payments!payments_membership_id_fkey(status)"
                 ")"
             )
@@ -596,7 +610,7 @@ class MemberService:
         # Join memberships → plans to get plan name; DB column is receipt_no not receipt_number
         result = (
             db.table("payments")
-            .select("id, receipt_no, payment_date, payment_method, amount, discount, status, notes, memberships(plans(name))")
+            .select("id, receipt_no, payment_date, payment_method, amount, discount, status, notes, memberships(plans!memberships_plan_id_fkey(name))")
             .eq("member_id", member_id)
             .order("payment_date", desc=True)
             .execute()
@@ -631,7 +645,7 @@ class MemberService:
         db     = get_supabase()
         result = (
             db.table("memberships")
-            .select("*, plans(id, name, price)")
+            .select("*, plans!memberships_plan_id_fkey(id, name, price)")
             .eq("member_id", member_id)
             .order("start_date", desc=True)
             .execute()
