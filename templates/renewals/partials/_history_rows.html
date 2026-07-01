@@ -1,0 +1,68 @@
+{% if not items %}
+<tr>
+  <td colspan="8" class="px-5 py-16 text-center text-sm text-[#94b1d2] border-b border-gray-700">
+    No renewal history found.
+  </td>
+</tr>
+{% else %}
+{% for it in items %}
+<tr class="transition-colors duration-150 hover:bg-[#11213c]">
+
+  {# ── Member ──────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700">
+    <div class="flex items-center gap-3">
+      {% if it.photo_url %}
+      <img src="{{ it.photo_url }}" alt="{{ it.name }}"
+           class="w-10 h-10 rounded-xl object-cover border border-[#1c3152] flex-shrink-0">
+      {% else %}
+      <div class="w-10 h-10 rounded-xl bg-[#122d4f] border border-[#1c3152] flex-shrink-0
+                  flex items-center justify-center text-[#7ce3ff] text-sm font-bold">
+        {{ (it.name or 'M')[0].upper() }}
+      </div>
+      {% endif %}
+      <div class="min-w-0">
+        <p class="text-white text-sm font-semibold truncate">{{ it.name }}</p>
+        <p class="text-[#41c2ef] text-xs truncate font-mono">{{ it.member_id }}</p>
+      </div>
+    </div>
+  </td>
+
+  {# ── Previous Plan ────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700">
+    <span class="text-[#94b1d2] text-sm capitalize">{{ it.previous_plan }}</span>
+  </td>
+
+  {# ── New Plan ─────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700">
+    <span class="text-white text-sm font-semibold capitalize">{{ it.new_plan }}</span>
+  </td>
+
+  {# ── Expiry ───────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700 text-[#94b1d2] text-sm whitespace-nowrap">
+    {{ it.expiry_date }}
+  </td>
+
+  {# ── Amount ───────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700 text-[#41c2ef] text-sm font-semibold whitespace-nowrap">
+    {{ it.amount_label }}
+  </td>
+
+  {# ── Discount ─────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700 text-sm whitespace-nowrap
+             {% if it.discount_pct > 0 %}text-red-400{% else %}text-[#527195]{% endif %}">
+    {% if it.discount_pct > 0 %}-{{ it.discount_pct }}%{% else %}—{% endif %}
+  </td>
+
+  {# ── Total Amount ─────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700 text-white text-sm font-bold whitespace-nowrap">
+    {{ it.total_label }}
+  </td>
+
+  {# ── Method ───────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700">
+    <span class="text-[#94b1d2] text-sm">{{ it.method }}</span>
+  </td>
+
+</tr>
+{% endfor %}
+{% endif %}

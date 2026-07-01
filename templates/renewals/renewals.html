@@ -1,0 +1,626 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    .custom-scroll::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+        background: #0B0F1A;
+        border-radius: 99px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+        background: #1c3152;
+        border-radius: 99px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+        background: #41c2ef;
+    }
+
+    .custom-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #1c3152 #0B0F1A;
+    }
+</style>
+
+{# ── Flash Messages ────────────────────────────────────────────────────────── #}
+{% if success %}
+<div id="flash-msg" class="fixed top-6 right-6 z-[999] flex items-center gap-3 bg-green-500/10 border border-green-500/30
+            text-green-400 text-sm font-medium px-5 py-3.5 rounded-2xl shadow-xl backdrop-blur-sm max-w-sm">
+    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    <span>{{ success }}</span>
+    <button onclick="this.parentElement.remove()" class="ml-auto text-green-400/60 hover:text-green-300">✕</button>
+</div>
+<script>setTimeout(() => { document.getElementById('flash-msg')?.remove() }, 4000)</script>
+{% endif %}
+{% if error %}
+<div id="flash-msg" class="fixed top-6 right-6 z-[999] flex items-center gap-3 bg-red-500/10 border border-red-500/30
+            text-red-400 text-sm font-medium px-5 py-3.5 rounded-2xl shadow-xl backdrop-blur-sm max-w-sm">
+    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+    <span>{{ error }}</span>
+    <button onclick="this.parentElement.remove()" class="ml-auto text-red-400/60 hover:text-red-300">✕</button>
+</div>
+<script>setTimeout(() => { document.getElementById('flash-msg')?.remove() }, 5000)</script>
+{% endif %}
+
+{# ── Page Header ──────────────────────────────────────────────────────────── #}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-white text-3xl font-bold tracking-tight">Membership Renewals</h1>
+</div>
+
+{# ── Tabs ──────────────────────────────────────────────────────────────────── #}
+<div class="inline-flex items-center gap-1 bg-[#1A2236] border border-[#1c3152] rounded-2xl p-1.5 mb-6">
+    <button onclick="switchTab('members')" id="tab-btn-members"
+        class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:text-[#41c2ef]
+                 {% if tab == 'members' %}bg-[#0B0F1A] text-white{% else %}text-[#94b1d2]{% endif %}">
+        Renewals Members
+    </button>
+    <button onclick="switchTab('history')" id="tab-btn-history"
+        class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:text-[#41c2ef]
+                 {% if tab == 'history' %}bg-[#0B0F1A] text-white{% else %}text-[#94b1d2]{% endif %}">
+        Renewals History
+    </button>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════
+TAB 1 — Renewals Members
+══════════════════════════════════════════════════════════════════════════ #}
+<div id="panel-members" class="{% if tab != 'members' %}hidden{% endif %}">
+
+    {# Filter bar #}
+    <div class="flex items-center gap-3 mb-6 flex-wrap">
+        <div class="relative flex-1 min-w-[220px] max-w-xs">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#527195]">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </span>
+            <input id="search-input" type="text" value="{{ search }}" placeholder="Search by name, ID, phone no..."
+                class="w-full bg-[#1A2236] border border-[#1c3152] rounded-2xl pl-12 pr-4 py-3
+                    text-sm text-gray-100 placeholder-[#527195] focus:outline-none focus:border-gray-600 transition-colors">
+        </div>
+
+        <select id="filter-days"
+            class="csel-target bg-[#1A2236] border border-[#1c3152] rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-gray-600">
+            <option value="">Select days</option>
+            <option value="7" {% if days=='7' %}selected{% endif %}>Within 7 days</option>
+            <option value="15" {% if days=='15' %}selected{% endif %}>Within 15 days</option>
+            <option value="30" {% if days=='30' %}selected{% endif %}>Within 30 days</option>
+        </select>
+
+        <select id="filter-status"
+            class="csel-target bg-[#1A2236] border border-[#1c3152] rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-gray-600">
+            <option value="">Status</option>
+            <option value="active" {% if status=='active' %}selected{% endif %}>Active</option>
+            <option value="expiring_soon" {% if status=='expiring_soon' %}selected{% endif %}>Expiring Soon</option>
+            <option value="expired" {% if status=='expired' %}selected{% endif %}>Expired</option>
+        </select>
+    </div>
+
+    {# Table #}
+    <div class="bg-[#1A2236] rounded-2xl overflow-hidden shadow-[0_22px_50px_rgba(6,15,32,0.30)]">
+        <div class="overflow-x-auto">
+            <table class="w-full border-separate border-spacing-0">
+                <thead>
+                    <tr class="bg-[#0B0F1A]">
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Member</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Phone</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Current Plan</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Join Date</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Expiry Date</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Days</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Status</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Dues</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Action</th>
+                    </tr>
+                </thead>
+                <tbody id="renewal-tbody">
+                    {% include "renewals/partials/_renewal_rows.html" %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_pages > 1 %}
+        <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-700">
+            {% if page > 1 %}
+            <button onclick="goToPage({{ page - 1 }})"
+                class="px-4 py-2 text-sm text-[#94b1d2] hover:text-white border border-[#1c3152] hover:border-gray-600 rounded-xl transition-colors">Previous</button>
+            {% else %}
+            <button
+                class="px-4 py-2 text-sm text-[#527195] border border-gray-800 rounded-xl cursor-not-allowed">Previous</button>
+            {% endif %}
+            {% for p in range(1, total_pages + 1) %}
+            <button onclick="goToPage({{ p }})"
+                class="w-9 h-9 text-sm rounded-xl font-medium transition-colors
+                     {% if p == page %}bg-[#41c2ef] text-gray-900{% else %}text-[#94b1d2] border border-[#1c3152] hover:text-white hover:border-gray-600{% endif %}">
+                {{ p }}
+            </button>
+            {% endfor %}
+            {% if page < total_pages %} <button onclick="goToPage({{ page + 1 }})"
+                class="px-4 py-2 text-sm text-[#94b1d2] hover:text-white border border-[#1c3152] hover:border-gray-600 rounded-xl transition-colors">
+                Next</button>
+                {% else %}
+                <button
+                    class="px-4 py-2 text-sm text-[#527195] border border-gray-800 rounded-xl cursor-not-allowed">Next</button>
+                {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════
+TAB 2 — Renewals History
+══════════════════════════════════════════════════════════════════════════ #}
+<div id="panel-history" class="{% if tab != 'history' %}hidden{% endif %}">
+
+    <div class="flex items-center gap-3 mb-6 flex-wrap">
+        <div class="relative flex-1 min-w-[220px] max-w-xs">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#527195]">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </span>
+            <input id="history-search-input" type="text" placeholder="Search by name, ID..."
+                class="w-full bg-[#1A2236] border border-[#1c3152] rounded-2xl pl-12 pr-4 py-3
+                    text-sm text-gray-100 placeholder-[#527195] focus:outline-none focus:border-gray-600 transition-colors">
+        </div>
+    </div>
+
+    <div class="bg-[#1A2236] rounded-2xl overflow-hidden shadow-[0_22px_50px_rgba(6,15,32,0.30)]">
+        <div class="overflow-x-auto">
+            <table class="w-full border-separate border-spacing-0">
+                <thead>
+                    <tr class="bg-[#0B0F1A]">
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Member</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Previous Plan</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            New Plan</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Expiry</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Amount</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Discount</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Total Amount</th>
+                        <th
+                            class="text-left text-xs font-bold text-[#94b1d2] uppercase tracking-wider px-5 py-4 border-b border-gray-700">
+                            Method</th>
+                    </tr>
+                </thead>
+                <tbody id="history-tbody">
+                    {% if tab == 'history' %}
+                    {% include "renewals/partials/_history_rows.html" %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{# ══════════════════════════════════════════════════════════════════════════
+MODAL — Renew Member
+══════════════════════════════════════════════════════════════════════════ #}
+<dialog id="renewal-modal" class="bg-[#1A2236] w-full max-w-5xl rounded-2xl p-0
+               shadow-[0_40px_120px_rgba(0,0,0,0.7)] backdrop:bg-black/70">
+    <div class="flex flex-col" style="max-height:90vh;">
+
+        <div class="flex items-center justify-between px-8 pt-7 pb-5 border-b border-gray-700 flex-shrink-0">
+            <h2 class="text-white text-2xl font-bold">Renewal Member</h2>
+            <button onclick="closeModal('renewal-modal')" class="text-[#94b1d2] hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scroll px-8 py-6 space-y-6" id="renewal-modal-body">
+            <div class="flex items-center justify-center py-16">
+                <div class="w-8 h-8 border-2 border-[#41c2ef] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3 px-8 py-5 border-t border-gray-700 bg-[#1A2236] flex-shrink-0">
+            <button type="button" onclick="closeModal('renewal-modal')" class="px-7 py-2.5 border border-[#1c3152] text-[#94b1d2] hover:text-white hover:bg-[#11213c]
+                     rounded-xl text-sm font-medium transition-colors">
+                Cancel
+            </button>
+            <button type="button" onclick="submitRenewal()" id="renewal-submit-btn" class="px-7 py-2.5 bg-[#41c2ef] hover:bg-[#41c2ef]/90 text-gray-900 hover:text-white font-semibold
+                     rounded-xl text-sm transition-colors">
+                Renew
+            </button>
+        </div>
+    </div>
+</dialog>
+
+
+{# ══════════════════════════════════════════════════════════════════════════
+JavaScript
+══════════════════════════════════════════════════════════════════════════ #}
+<script>
+    const PLANS = {{ plans | tojson }};
+    let currentRenewalMembershipId = null;
+    let renewalDetail = null;
+
+    // ── Modal helpers ──────────────────────────────────────────────────────────
+    function closeModal(id) { document.getElementById(id).close(); }
+    document.querySelectorAll('dialog').forEach(d => {
+        d.addEventListener('click', e => { if (e.target === d) d.close(); });
+    });
+
+    // ── Tabs ──────────────────────────────────────────────────────────────────
+    function switchTab(tab) {
+        const url = new URL(window.location);
+        url.searchParams.set('tab', tab);
+        window.history.pushState({}, '', url);
+
+        document.getElementById('panel-members').classList.toggle('hidden', tab !== 'members');
+        document.getElementById('panel-history').classList.toggle('hidden', tab !== 'history');
+
+        ['members', 'history'].forEach(t => {
+            const btn = document.getElementById(`tab-btn-${t}`);
+            if (t === tab) { btn.classList.add('bg-[#0B0F1A]', 'text-white'); btn.classList.remove('text-[#94b1d2]'); }
+            else { btn.classList.remove('bg-[#0B0F1A]', 'text-white'); btn.classList.add('text-[#94b1d2]'); }
+        });
+
+        if (tab === 'history') doHistorySearch();
+    }
+
+    // ── Members tab search/filter ────────────────────────────────────────────
+    let searchTimer;
+    function triggerSearch() { clearTimeout(searchTimer); searchTimer = setTimeout(() => doSearch(), 350); }
+    function doSearch(page = 1) {
+        const q = document.getElementById('search-input').value;
+        const days = document.getElementById('filter-days').value;
+        const status = document.getElementById('filter-status').value;
+        const params = new URLSearchParams({ q, days, status, page });
+        fetch(`/renewals/search?${params}`)
+            .then(r => r.text())
+            .then(html => { document.getElementById('renewal-tbody').innerHTML = html; });
+    }
+    function goToPage(p) { doSearch(p); }
+
+    document.getElementById('search-input').addEventListener('input', triggerSearch);
+    document.getElementById('filter-days').addEventListener('change', () => doSearch());
+    document.getElementById('filter-status').addEventListener('change', () => doSearch());
+
+    // ── History tab search ────────────────────────────────────────────────────
+    let historySearchTimer;
+    document.getElementById('history-search-input').addEventListener('input', () => {
+        clearTimeout(historySearchTimer);
+        historySearchTimer = setTimeout(doHistorySearch, 350);
+    });
+    function doHistorySearch(page = 1) {
+        const q = document.getElementById('history-search-input').value;
+        const params = new URLSearchParams({ q, page });
+        fetch(`/renewals/history/search?${params}`)
+            .then(r => r.text())
+            .then(html => { document.getElementById('history-tbody').innerHTML = html; });
+    }
+
+    // ── Send reminder placeholder ────────────────────────────────────────────
+    function sendReminder(memberId, btn) {
+        const original = btn.innerHTML;
+        btn.innerHTML = `<svg class="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
+        setTimeout(() => { btn.innerHTML = original; }, 1500);
+        // MVP2: hook into notification_service for SMS/WhatsApp/Email
+    }
+
+    // ── Renewal Modal ─────────────────────────────────────────────────────────
+    async function openRenewalModal(membershipId) {
+        currentRenewalMembershipId = membershipId;
+        document.getElementById('renewal-modal-body').innerHTML = `
+    <div class="flex items-center justify-center py-16">
+      <div class="w-8 h-8 border-2 border-[#41c2ef] border-t-transparent rounded-full animate-spin"></div>
+    </div>`;
+        document.getElementById('renewal-modal').showModal();
+
+        try {
+            const res = await fetch(`/renewals/detail/${membershipId}`);
+            const json = await res.json();
+            if (!json.success) {
+                document.getElementById('renewal-modal-body').innerHTML =
+                    `<p class="text-red-400 text-sm text-center py-12">${json.error || 'Failed to load.'}</p>`;
+                return;
+            }
+            renewalDetail = json.data;
+            renderRenewalForm(renewalDetail);
+        } catch (e) {
+            document.getElementById('renewal-modal-body').innerHTML =
+                `<p class="text-red-400 text-sm text-center py-12">Network error.</p>`;
+        }
+    }
+
+    function renderRenewalForm(d) {
+        const initials = (d.name || 'M').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+        const planOptions = PLANS.map(p => `<option value="${p.id}" ${p.id === d.current_plan_id ? 'selected' : ''}>${p.name}</option>`).join('');
+
+        document.getElementById('renewal-modal-body').innerHTML = `
+    <div class="flex items-center gap-4 mb-2">
+      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#41c2ef] to-[#1c7fa8] flex items-center justify-center text-white text-xl font-bold flex-shrink-0 overflow-hidden">
+        ${d.photo_url ? `<img src="${d.photo_url}" class="w-full h-full object-cover" alt="${d.name}">` : initials}
+    </div>
+      <div>
+        <h3 class="text-white text-xl font-bold">${d.name}</h3>
+        <p class="text-[#94b1d2] text-sm">${d.phone || ''}</p>
+        <p class="text-[#94b1d2] text-sm">${d.email || ''}</p>
+      </div>
+    </div>
+
+    <div>
+      <p class="text-[#527195] text-xs font-bold uppercase tracking-widest mb-4 border-b border-gray-700 pb-3">Member Info</p>
+      <div class="grid grid-cols-2 gap-4 mb-2">
+        <div class="bg-[#0B0F1A] rounded-xl p-4">
+          <p class="text-[#527195] text-xs font-semibold uppercase tracking-wider mb-1.5">Member ID</p>
+          <p class="text-[#41c2ef] text-sm font-bold font-mono">${d.member_id}</p>
+        </div>
+        <div class="bg-[#0B0F1A] rounded-xl p-4">
+          <p class="text-[#527195] text-xs font-semibold uppercase tracking-wider mb-1.5">Current Plan</p>
+          <p class="text-white text-sm font-medium capitalize">${d.current_plan_name}</p>
+        </div>
+        <div class="bg-[#0B0F1A] rounded-xl p-4">
+          <p class="text-[#527195] text-xs font-semibold uppercase tracking-wider mb-1.5">Status</p>
+          <p class="text-sm font-semibold ${d.member_status === 'active' ? 'text-green-400' : 'text-red-400'}">${cap(d.member_status)}</p>
+        </div>
+        <div class="bg-[#0B0F1A] rounded-xl p-4">
+          <p class="text-[#527195] text-xs font-semibold uppercase tracking-wider mb-1.5">Current Expiry</p>
+          <p class="text-white text-sm font-medium">${d.expiry_date}</p>
+        </div>
+        <div class="bg-[#0B0F1A] rounded-xl p-4">
+          <p class="text-[#527195] text-xs font-semibold uppercase tracking-wider mb-1.5">Days Remaining</p>
+          <p class="text-sm font-semibold ${d.status === 'expired' ? 'text-red-400' : d.status === 'expiring_soon' ? 'text-orange-400' : 'text-green-400'}">${d.days_label}</p>
+        </div>
+        <div class="bg-[#0B0F1A] rounded-xl p-4">
+          <p class="text-[#527195] text-xs font-semibold uppercase tracking-wider mb-1.5">Pending Dues</p>
+          <p class="text-white text-sm font-medium">${d.dues_label}</p>
+        </div>
+      </div>
+      ${d.dues > 0 ? `
+      <label class="flex items-center gap-2.5 cursor-pointer mt-1">
+        <input type="checkbox" id="r-skip-dues" class="w-4 h-4 accent-[#41c2ef]">
+        <span class="text-[#94b1d2] text-sm">Skip Dues (mark previous pending dues as cleared)</span>
+      </label>` : ''}
+    </div>
+
+    <div>
+      <p class="text-[#527195] text-xs font-bold uppercase tracking-widest mb-4 border-b border-gray-700 pb-3">Renewal Detail</p>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">New Plan</label>
+          <select id="r-new-plan" class="csel-target csel-sm-target w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 text-sm focus:outline-none focus:border-gray-600 transition-colors" onchange="onRenewPlanChange()">
+            ${planOptions}
+          </select>
+        </div>
+        <div>
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Plan Duration</label>
+          <select id="r-duration" class="csel-target csel-sm-target w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 text-sm focus:outline-none focus:border-gray-600 transition-colors" onchange="recalcRenewal()"></select>
+        </div>
+        <div>
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Renewal Start</label>
+          <input type="date" id="r-start" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 text-sm focus:outline-none focus:border-gray-600 transition-colors [color-scheme:dark]" onchange="recalcRenewal()">
+        </div>
+        <div>
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Expiry</label>
+          <input type="date" id="r-expiry" class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 text-sm focus:outline-none focus:border-gray-600 transition-colors [color-scheme:dark]" readonly>
+        </div>
+        <div>
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Additional Discount %</label>
+          <input type="text" id="r-extra-discount" min="0" max="100" value="0" placeholder="0"
+                 class="w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 text-sm focus:outline-none focus:border-gray-600 transition-colors" oninput="recalcRenewal()">
+        </div>
+        <div>
+          <label class="block text-[#94b1d2] text-sm font-semibold mb-2">Payment Method</label>
+          <select id="r-payment-method" class="csel-target csel-sm-target w-full bg-[#0B0F1A] border border-[#1c3152] rounded-xl px-4 py-3 text-gray-100 text-sm focus:outline-none focus:border-gray-600 transition-colors">
+            <option value="cash">Cash</option>
+            <option value="jazzcash">JazzCash</option>
+            <option value="easypaisa">EasyPaisa</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="card">Card</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div>
+  <p class="text-[#527195] text-xs font-bold uppercase tracking-widest mb-4 border-b border-gray-700 pb-3">Payment Detail</p>
+  <div class="grid grid-cols-3 gap-4">
+    <div class="bg-[#0B0F1A] rounded-xl p-4 text-center">
+  <p class="text-[#527195] text-xs font-semibold uppercase tracking-wider mb-1.5">Membership Fees</p>
+  <div class="flex items-center justify-center gap-2 mb-0.5">
+    <p id="r-fee-original" class="text-[#94b1d2] text-sm font-semibold line-through">—</p>
+    <span id="r-fee-plan-disc-badge" class="hidden text-orange-400 text-xs font-bold">—</span>
+  </div>
+  <p id="r-fee-after-plan" class="text-[#41c2ef] text-2xl font-bold">—</p>
+</div>
+    <div class="bg-[#0B0F1A] rounded-xl p-4 text-center">
+      <p class="text-[#527195] text-xs font-semibold uppercase tracking-wider mb-1.5">Additional Discount</p>
+      <p id="r-fee-discount-pct" class="text-red-400 text-2xl font-bold">—</p>
+      <p id="r-fee-discount-amt" class="text-[#94b1d2] text-sm font-medium mt-0.5">—</p>
+    </div>
+    <div class="bg-[#0B0F1A] rounded-xl p-4 text-center">
+      <p class="text-[#527195] text-xs font-semibold uppercase tracking-wider mb-1.5">Total Amount</p>
+      <p id="r-fee-total" class="text-white text-2xl font-bold">—</p>
+    </div>
+  </div>
+</div>
+  `;
+
+        // Defaults
+        const todayIso = new Date().toISOString().slice(0, 10);
+        document.getElementById('r-start').value = todayIso;
+
+        buildDurationOptions(d.current_plan_duration_days);
+
+        recalcRenewal();
+        if (window.initCustomSelects) window.initCustomSelects();
+    }
+
+    function onRenewPlanChange() {
+        const planId = document.getElementById('r-new-plan').value;
+        const plan = PLANS.find(p => String(p.id) === String(planId));
+        if (plan && renewalDetail) {
+            renewalDetail.current_plan_price = plan.price;
+            renewalDetail.current_plan_discount = plan.discount_percent || 0;
+            renewalDetail.current_plan_duration_days = plan.duration_days || 30;
+        }
+        buildDurationOptions(renewalDetail.current_plan_duration_days);
+        recalcRenewal();
+    }
+
+    function recalcRenewal() {
+        if (!renewalDetail) return;
+        const startVal = document.getElementById('r-start').value;
+        const durVal = parseInt(document.getElementById('r-duration').value) || 1;
+        if (!startVal) return;
+
+        const d = new Date(startVal);
+        d.setMonth(d.getMonth() + durVal);
+        document.getElementById('r-expiry').value = d.toISOString().slice(0, 10);
+
+        const planMonths = Math.max(1, Math.round((renewalDetail.current_plan_duration_days || 30) / 30));
+        const multiplier = durVal / planMonths;
+        const scaledPrice = renewalDetail.current_plan_price * multiplier;     // original (no discounts)
+
+        const planDiscPct = renewalDetail.current_plan_discount || 0;
+        const planDiscAmt = scaledPrice * (planDiscPct / 100);
+        const afterPlan = scaledPrice - planDiscAmt;                         // after plan discount only
+
+        const extraDiscPct = parseFloat(document.getElementById('r-extra-discount').value) || 0;
+        const extraDiscAmt = afterPlan * (extraDiscPct / 100);
+        const finalPrice = Math.round(afterPlan - extraDiscAmt);              // after BOTH discounts
+
+        // Membership Fees card — original price (struck, only if plan has its own discount) + plan-discounted price
+        const badgeEl = document.getElementById('r-fee-plan-disc-badge');
+if (planDiscPct > 0) {
+  document.getElementById('r-fee-original').textContent = `PKR ${Math.round(scaledPrice).toLocaleString()}`;
+  badgeEl.textContent = `-${planDiscPct}%`;
+  badgeEl.classList.remove('hidden');
+} else {
+  document.getElementById('r-fee-original').textContent = '';
+  badgeEl.classList.add('hidden');
+}
+document.getElementById('r-fee-after-plan').textContent = `PKR ${Math.round(afterPlan).toLocaleString()}`;
+
+        // Additional Discount card — ONLY the extra/manual discount entered by staff
+        document.getElementById('r-fee-discount-pct').textContent = extraDiscPct > 0 ? `-${extraDiscPct}%` : '0%';
+        document.getElementById('r-fee-discount-amt').textContent = extraDiscAmt > 0 ? `PKR ${Math.round(extraDiscAmt).toLocaleString()} off` : '—';
+
+        // Total Amount card — final payable after both discounts
+        document.getElementById('r-fee-total').textContent = `PKR ${finalPrice.toLocaleString()}`;
+    }
+
+    async function submitRenewal() {
+        if (!currentRenewalMembershipId) return;
+        const btn = document.getElementById('renewal-submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Renewing…';
+
+        const body = new FormData();
+        body.append('new_plan_id', document.getElementById('r-new-plan').value);
+        body.append('duration_months', document.getElementById('r-duration').value);
+        body.append('start_date', document.getElementById('r-start').value);
+        body.append('expiry_date', document.getElementById('r-expiry').value);
+        body.append('extra_discount_percent', document.getElementById('r-extra-discount').value || '0');
+        body.append('payment_method', document.getElementById('r-payment-method').value);
+        body.append('payment_status', 'pending');
+        const skipDuesEl = document.getElementById('r-skip-dues');
+        body.append('skip_dues', skipDuesEl && skipDuesEl.checked ? 'true' : 'false');
+
+        try {
+            const res = await fetch(`/renewals/renew/${currentRenewalMembershipId}`, { method: 'POST', body });
+            const json = await res.json();
+            if (json.success) {
+                closeModal('renewal-modal');
+                window.location.href = '/renewals/?tab=members&success=Membership+renewed+successfully';
+            } else {
+                alert(json.error || 'Failed to renew membership.');
+            }
+        } catch (e) {
+            alert('Network error. Please try again.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Renew';
+        }
+    }
+
+
+    function buildDurationOptions(planDurationDays) {
+        const planMonths = Math.max(1, Math.round((planDurationDays || 30) / 30));
+        let opts = [];
+
+        if (planMonths >= 12) {
+            opts = [1, 1.5, 2, 2.5, 3].map(y => ({ value: Math.round(y * 12), label: `${y} Year${y !== 1 ? 's' : ''}` }));
+        } else if (planMonths >= 3) {
+            opts = [1, 2, 3, 4].map(q => ({ value: q * 3, label: `${q} Quarter${q !== 1 ? 's' : ''}` }));
+        } else {
+            opts = [1, 2, 3, 6, 12].map(m => ({ value: m, label: `${String(m).padStart(2, '0')} Month${m !== 1 ? 's' : ''}` }));
+        }
+
+        rebuildCustomSelect('r-duration', opts, planMonths);
+    }
+
+    // Rebuilds a select's native options AND its custom dropdown UI from scratch
+    function rebuildCustomSelect(selectId, opts, defaultValue) {
+        const sel = document.getElementById(selectId);
+        if (!sel) return;
+
+        // Remove the old custom-select wrapper if it exists, restore the raw <select>
+        const wrap = sel.closest('.csel');
+        if (wrap) {
+            wrap.parentNode.insertBefore(sel, wrap);
+            wrap.remove();
+        }
+        sel.style.display = '';
+        delete sel.dataset.cselDone;
+
+        // Rewrite options
+        sel.innerHTML = opts.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+        for (const opt of sel.options) {
+            if (parseInt(opt.value) === defaultValue) { sel.value = opt.value; break; }
+        }
+
+        // Rebuild the custom dropdown UI fresh
+        if (window.initCustomSelects) window.initCustomSelects();
+    }
+
+    function cap(s) { if (!s) return '—'; return s.charAt(0).toUpperCase() + s.slice(1); }
+</script>
+
+{% endblock %}

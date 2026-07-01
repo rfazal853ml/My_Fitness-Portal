@@ -1,0 +1,115 @@
+{% if not items %}
+<tr>
+  <td colspan="9" class="px-5 py-16 text-center text-sm text-[#94b1d2] border-b border-gray-700">
+    No memberships found matching your search.
+  </td>
+</tr>
+{% else %}
+{% for it in items %}
+<tr class="transition-colors duration-150 hover:bg-[#11213c]">
+
+  {# ── Member ──────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700">
+    <div class="flex items-center gap-3">
+      {% if it.photo_url %}
+      <img src="{{ it.photo_url }}" alt="{{ it.name }}"
+           class="w-10 h-10 rounded-xl object-cover border border-[#1c3152] flex-shrink-0">
+      {% else %}
+      <div class="w-10 h-10 rounded-xl bg-[#122d4f] border border-[#1c3152] flex-shrink-0
+                  flex items-center justify-center text-[#7ce3ff] text-sm font-bold">
+        {{ (it.name or 'M')[0].upper() }}
+      </div>
+      {% endif %}
+      <div class="min-w-0">
+        <p class="text-white text-sm font-semibold truncate">{{ it.name }}</p>
+        <p class="text-[#41c2ef] text-xs truncate font-mono">{{ it.member_id }}</p>
+      </div>
+    </div>
+  </td>
+
+  {# ── Phone ────────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700 text-[#94b1d2] text-sm whitespace-nowrap">
+    {{ it.phone or '—' }}
+  </td>
+
+  {# ── Current Plan ─────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700">
+    <span class="text-white text-sm capitalize">{{ it.plan_name }}</span>
+  </td>
+
+  {# ── Join Date ────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700 text-[#94b1d2] text-sm whitespace-nowrap">
+    {{ it.start_date }}
+  </td>
+
+  {# ── Expiry Date ──────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700 text-[#94b1d2] text-sm whitespace-nowrap">
+    {{ it.expiry_date }}
+  </td>
+
+  {# ── Days ─────────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700">
+    <span class="text-sm font-semibold whitespace-nowrap
+      {% if it.status == 'expired' %}text-red-400
+      {% elif it.status == 'expiring_soon' %}text-orange-400
+      {% else %}text-green-400{% endif %}">
+      {{ it.days_label }}
+    </span>
+  </td>
+
+  {# ── Status ───────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700">
+    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap
+      {% if it.status == 'expired' %}bg-red-500/10 text-red-400
+      {% elif it.status == 'expiring_soon' %}bg-orange-500/10 text-orange-400
+      {% else %}bg-green-500/10 text-green-400{% endif %}">
+      {% if it.status == 'expired' %}Expired
+      {% elif it.status == 'expiring_soon' %}Expiring Soon
+      {% else %}Active{% endif %}
+    </span>
+  </td>
+
+  {# ── Dues ─────────────────────────────────────────────────────────────── #}
+  <td class="px-5 py-4 border-b border-gray-700 text-sm whitespace-nowrap
+             {% if it.dues > 0 %}text-orange-400 font-semibold{% else %}text-[#527195]{% endif %}">
+    {{ it.dues_label }}
+  </td>
+
+  {# ── Action ───────────────────────────────────────────────────────────── #}
+  <td class="px-2 py-4 border-b border-gray-700">
+    <div class="flex items-center justify-start gap-1.5">
+
+      {# View profile #}
+      <button onclick="window.location.href='/members/?search={{ it.member_id }}'"
+              title="View member"
+              class="flex h-9 w-9 items-center justify-center text-[#7ce3ff] hover:text-white">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+      </button>
+
+      {# Send reminder #}
+      <button onclick="sendReminder('{{ it.member_id }}', this)"
+              title="Send reminder"
+              class="flex h-9 w-9 items-center justify-center text-[#7ce3ff] hover:text-white">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+      </button>
+
+      {# Renew #}
+      <button onclick="openRenewalModal('{{ it.membership_id }}')"
+              class="px-4 h-9 rounded-xl bg-[#41c2ef] hover:bg-[#41c2ef]/90 hover:text-white
+                     text-gray-900 text-xs font-bold transition-colors whitespace-nowrap">
+        Renew
+      </button>
+
+    </div>
+  </td>
+</tr>
+{% endfor %}
+{% endif %}
